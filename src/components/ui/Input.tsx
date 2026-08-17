@@ -15,7 +15,9 @@ export function Input({ label, icon: Icon, error, className = "", ...props }: In
         {label}
       </label>
       <div className="relative">
-        {Icon && <Icon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />}
+        {Icon && (
+          <Icon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+        )}
         <input
           className={`w-full ${Icon ? "pl-10" : "px-3.5"} pr-4 py-2.5 bg-slate-950/80 border ${
             error ? "border-rose-500" : "border-slate-800"

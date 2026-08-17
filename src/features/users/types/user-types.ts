@@ -1,5 +1,3 @@
-import { UserRole } from "@/types/user";
-
 export interface ProfileUpdatePayload {
   phone_number?: string;
   emergency_contact?: string;
@@ -15,5 +13,27 @@ export interface UserListParams {
   limit?: number;
   search?: string;
   department_id?: string;
-  role?: UserRole;
+  role_id?: string;
+  role_name?: string;
+}
+
+export interface UserCreatePayload {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  role_id?: string;
+  department_id?: string;
+  designation_id?: string;
+  manager_id?: string;
+}
+
+export interface UserUpdatePayload {
+  first_name?: string;
+  last_name?: string;
+  role_id?: string;
+  department_id?: string;
+  designation_id?: string;
+  manager_id?: string;
+  is_active?: boolean;
 }

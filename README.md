@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡ OmniHR Frontend — Modern Next.js 16 Web Application
 
-## Getting Started
+The frontend client for **OmniHR** built with Next.js 16 (Turbopack), React 19, TypeScript, TailwindCSS, and Zustand.
 
-First, run the development server:
+---
+
+## 🌟 Highlights
+
+- **Aesthetic Glassmorphism Design**: Custom dark-mode UI tokens with sleek gradient accents and micro-animations.
+- **Unified Monthly Workspace Calendar**: Rich interactive calendar featuring multi-layer badge overlays (Holidays, Leaves, Timesheets) and date inspector modals.
+- **Custom UI Components**:
+  - `<DatePicker />`: Glassmorphic date popover with month/year navigation and quick presets.
+  - `<TimeSelect />`: Work hours duration selector with standard presets (`1h`, `2h`, `4h Half-Day`, `8h Full-Day`).
+  - `<DataTable<T> />`: Generic, strongly-typed data table with loading skeleton, pagination controls, and empty states.
+  - `<ConfirmDialog />`: Production confirmation dialogs replacing browser native alerts.
+  - `<StatusBadge />`: Adaptive status pill supporting all domain statuses.
+  - `<FilterBar />`: Search & categorical filter toolbar.
+- **Granular RBAC Guarding**: Automatically adapts UI elements, tabs, and action buttons based on user permissions.
+- **Zustand State Management**: Reactive auth state persistence and permission validation helpers (`hasPermission`).
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Environment Variables
+
+Create `.env.local` in the `frontend/` root:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Available Scripts
 
-## Learn More
+| Script                  | Command                | Purpose                                        |
+| :---------------------- | :--------------------- | :--------------------------------------------- |
+| **`npm run dev`**       | `next dev --turbopack` | Starts local development server with Turbopack |
+| **`npm run build`**     | `next build`           | Creates optimized production build             |
+| **`npm run start`**     | `next start`           | Starts production server                       |
+| **`npm run lint`**      | `eslint`               | Runs ESLint 9 code quality check               |
+| **`npm run lint:fix`**  | `eslint --fix`         | Automatically fixes autofixable lint issues    |
+| **`npm run typecheck`** | `tsc --noEmit`         | Runs full TypeScript compiler type check       |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📂 Source Code Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+frontend/src/
+├── app/                      # App router route handlers & pages
+│   ├── layout.tsx            # Global RootLayout with ToastProvider & Providers
+│   ├── page.tsx              # Landing / Redirection
+│   ├── login/                # Authentication page
+│   ├── dashboard/            # Executive dashboard & month calendar
+│   ├── leaves/               # Leaves portal, team approvals, company holidays
+│   ├── timesheets/           # Timesheet logging & weekly manager reviews
+│   ├── projects/             # Projects directory & CRUD modals
+│   ├── employees/            # Employee directory & user management
+│   ├── roles/                # RBAC roles & permissions matrix catalog
+│   ├── audit-logs/           # System audit trail inspector
+│   └── profile/              # Self-service employee profile
+│
+├── components/
+│   ├── layout/               # AppShell, Navbar, Sidebar
+│   ├── providers/            # ToastProvider, AuthProvider
+│   └── ui/                   # Reusable atomic UI library (DatePicker, TimeSelect, Modal, etc.)
+│
+├── constants/                # Permissions, roles, routes, pagination, timesheets, calendar
+├── features/                 # Domain modules (api, types, components)
+│   ├── audit/
+│   ├── auth/
+│   ├── dashboard/
+│   ├── leaves/
+│   ├── projects/
+│   ├── roles/
+│   ├── timesheets/
+│   └── users/
+│
+├── lib/                      # api-client, date-utils, error-utils
+├── store/                    # Zustand stores (use-auth-store)
+└── types/                    # api.ts, user.ts
+```

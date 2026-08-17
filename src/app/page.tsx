@@ -18,11 +18,16 @@ export default function Home() {
         </Badge>
 
         <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white max-w-4xl leading-[1.1]">
-          Modern HR, Automated Payroll, and <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">AI Tool Execution</span>.
+          Modern HR, Automated Payroll, and{" "}
+          <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            AI Tool Execution
+          </span>
+          .
         </h1>
 
         <p className="text-slate-400 text-lg sm:text-xl max-w-2xl leading-relaxed">
-          Streamline workforce management with multi-tier leave approval engines, real-time timesheets, role-bounded security, and conversational AI tools.
+          Streamline workforce management with multi-tier leave approval engines, real-time
+          timesheets, role-bounded security, and conversational AI tools.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -52,7 +57,10 @@ export default function Home() {
               <Calendar className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold text-white">Leave & Accrual Engine</h3>
-            <p className="text-sm text-slate-400">Multi-tier role approvals, holiday exclusions, LWS/LOP calculations, and carry-forward rules.</p>
+            <p className="text-sm text-slate-400">
+              Multi-tier role approvals, holiday exclusions, LWS/LOP calculations, and carry-forward
+              rules.
+            </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-sm space-y-3">
@@ -60,7 +68,10 @@ export default function Home() {
               <Clock className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold text-white">Timesheet & Time Tracking</h3>
-            <p className="text-sm text-slate-400">Daily work status logging, project task tracking, manager approvals, and overtime analytics.</p>
+            <p className="text-sm text-slate-400">
+              Daily work status logging, project task tracking, manager approvals, and overtime
+              analytics.
+            </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 backdrop-blur-sm space-y-3">
@@ -68,7 +79,10 @@ export default function Home() {
               <DollarSign className="w-5 h-5" />
             </div>
             <h3 className="text-lg font-bold text-white">Automated Payroll</h3>
-            <p className="text-sm text-slate-400">Prorated salary calculations, tax deductions, automated payslip generation, and bank dispatches.</p>
+            <p className="text-sm text-slate-400">
+              Prorated salary calculations, tax deductions, automated payslip generation, and bank
+              dispatches.
+            </p>
           </div>
         </div>
       </div>

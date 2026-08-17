@@ -1,4 +1,23 @@
-export type UserRole = "super_admin" | "hr_manager" | "department_lead" | "employee";
+export type UserRole = string;
+
+export interface Permission {
+  id: string;
+  code: string;
+  module: string;
+  description?: string | null;
+  created_at: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+  is_system: boolean;
+  permission_ids?: string[];
+  permissions?: Permission[];
+  created_at: string;
+  updated_at: string;
+}
 
 export interface DepartmentInfo {
   id: string;
@@ -27,9 +46,12 @@ export interface UserProfile {
   email: string;
   first_name: string;
   last_name: string;
-  role: UserRole;
+  role_id?: string | null;
+  role?: Role | null;
   is_active: boolean;
   department?: DepartmentInfo | null;
   designation?: DesignationInfo | null;
+  manager_id?: string | null;
   profile?: UserProfileData | null;
+  created_at: string;
 }

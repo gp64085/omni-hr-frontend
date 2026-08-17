@@ -16,6 +16,7 @@ OmniHR features a sleek, dark-mode glassmorphic design system built with Tailwin
 ## 2. Reusable UI Primitives (`src/components/ui/`)
 
 ### 1. `Button` (`Button.tsx`)
+
 Supports 4 variants (`gradient`, `primary`, `secondary`, `outline`), size controls, and an inline loading spinner.
 
 ```tsx
@@ -23,43 +24,42 @@ import { Button } from "@/components/ui/Button";
 
 <Button variant="gradient" isLoading={false}>
   Submit Action
-</Button>
+</Button>;
 ```
 
 ### 2. `Input` (`Input.tsx`)
+
 Supports label, input type, left icon, and validation error messages.
 
 ```tsx
 import { Input } from "@/components/ui/Input";
 import { Mail } from "lucide-react";
 
-<Input
-  label="Email Address"
-  type="email"
-  icon={Mail}
-  placeholder="you@company.com"
-/>
+<Input label="Email Address" type="email" icon={Mail} placeholder="you@company.com" />;
 ```
 
 ### 3. `Badge` (`Badge.tsx`)
+
 Supports 5 color variants (`indigo`, `emerald`, `rose`, `purple`, `amber`).
 
 ```tsx
 import { Badge } from "@/components/ui/Badge";
 
-<Badge variant="indigo">Enterprise v1.0</Badge>
+<Badge variant="indigo">Enterprise v1.0</Badge>;
 ```
 
 ### 4. `Alert` (`Alert.tsx`)
+
 Supports 3 message variants (`error`, `success`, `info`).
 
 ```tsx
 import { Alert } from "@/components/ui/Alert";
 
-<Alert variant="error">Invalid email or password.</Alert>
+<Alert variant="error">Invalid email or password.</Alert>;
 ```
 
 ### 5. `Card` (`Card.tsx`)
+
 Glassmorphism container card.
 
 ```tsx
@@ -67,10 +67,11 @@ import { Card } from "@/components/ui/Card";
 
 <Card>
   <h2>Card Title</h2>
-</Card>
+</Card>;
 ```
 
 ### 6. `PageLayout` (`PageLayout.tsx`)
+
 Page shell with top Header, bottom Footer, and radial glow background.
 
 ```tsx
