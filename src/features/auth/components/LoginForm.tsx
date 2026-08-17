@@ -13,7 +13,14 @@ interface LoginFormProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export function LoginForm({ email, setEmail, password, setPassword, isLoading, onSubmit }: LoginFormProps) {
+export function LoginForm({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  isLoading,
+  onSubmit,
+}: LoginFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <Input

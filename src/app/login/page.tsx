@@ -20,11 +20,15 @@ export default function LoginPage() {
           </Badge>
 
           <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">
-            Sign In to <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">OmniHR Workspace</span>
+            Sign In to{" "}
+            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              OmniHR Workspace
+            </span>
           </h1>
 
           <p className="text-slate-400 text-base sm:text-lg leading-relaxed max-w-xl">
-            Access your corporate HR portal to manage leave applications, submit weekly timesheets, inspect payslips, and execute AI workforce tools.
+            Access your corporate HR portal to manage leave applications, submit weekly timesheets,
+            inspect payslips, and execute AI workforce tools.
           </p>
 
           <div className="grid sm:grid-cols-2 gap-4 pt-4">
@@ -34,7 +38,9 @@ export default function LoginPage() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-white">Admin-Provisioned Accounts</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Strict security policies require HR/Admin activation before login.</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Strict security policies require HR/Admin activation before login.
+                </p>
               </div>
             </div>
 
@@ -44,7 +50,9 @@ export default function LoginPage() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-white">JWT Token Rotation</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Single-use refresh token rotation with SHA-256 database hashing.</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Single-use refresh token rotation with SHA-256 database hashing.
+                </p>
               </div>
             </div>
           </div>

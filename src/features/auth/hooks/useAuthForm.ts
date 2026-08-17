@@ -28,8 +28,7 @@ export function useAuthForm() {
       console.error(authenticationError);
       const err = authenticationError as { response?: { data?: { error?: { message?: string } } } };
       setErrorMsg(
-        err.response?.data?.error?.message ||
-          "Invalid credentials or backend server unreachable."
+        err.response?.data?.error?.message || "Invalid credentials or backend server unreachable."
       );
     } finally {
       setIsLoading(false);

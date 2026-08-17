@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { LoginForm } from "./LoginForm";
+import { ShieldCheck } from "lucide-react";
 
 interface AuthCardProps {
   email: string;
@@ -26,8 +27,13 @@ export function AuthCard({
   return (
     <Card>
       <div className="border-b border-slate-800 pb-4 mb-6 text-center">
-        <h2 className="text-xl font-bold text-white">Sign In to Workspace</h2>
-        <p className="text-xs text-slate-400 mt-1">Employee accounts are provisioned exclusively by HR & System Admins.</p>
+        <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-3">
+          <ShieldCheck className="w-5 h-5" />
+        </div>
+        <h2 className="text-xl font-bold text-white tracking-tight">Enterprise Sign In</h2>
+        <p className="text-xs text-slate-400 mt-1">
+          Enter your corporate credentials to access your OmniHR workspace.
+        </p>
       </div>
 
       {errorMsg && (
@@ -44,6 +50,13 @@ export function AuthCard({
         isLoading={isLoading}
         onSubmit={onSubmit}
       />
+
+      <div className="mt-6 pt-4 border-t border-slate-800 text-center">
+        <p className="text-[11px] text-slate-500">
+          Need an account or password reset? Please contact your organization&apos;s HR
+          administrator.
+        </p>
+      </div>
     </Card>
   );
 }

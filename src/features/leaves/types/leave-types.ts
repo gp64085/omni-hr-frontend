@@ -1,0 +1,83 @@
+export type LeaveTypeEnum = "casual" | "sick" | "earned" | "unpaid";
+export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
+
+export interface LeaveType {
+  id: string;
+  name: string;
+  default_quota: number;
+  requires_approval: boolean;
+  auto_approve_threshold: number;
+  created_at: string;
+}
+
+export interface LeaveAllocation {
+  id: string;
+  user_id: string;
+  leave_type_id: string;
+  leave_type: LeaveType;
+  year: number;
+  allocated_days: number;
+  used_days: number;
+  pending_days: number;
+  remaining_days: number;
+}
+
+export interface LeaveRequestUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+export interface LeaveRequest {
+  id: string;
+  user_id: string;
+  user?: LeaveRequestUser;
+  leave_type_id: string;
+  leave_type?: LeaveType;
+  start_date: string;
+  end_date: string;
+  total_days: number;
+  reason?: string;
+  is_half_day: boolean;
+  half_day_session?: "first_half" | "second_half" | null;
+  status: LeaveStatus;
+  approver_id?: string | null;
+  approver_comments?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Holiday {
+  id: string;
+  name: string;
+  holiday_date: string;
+  is_recurring: boolean;
+  year?: number;
+  created_at: string;
+}
+
+export interface LeaveRequestCreatePayload {
+  leave_type_id: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+  is_half_day?: boolean;
+  half_day_session?: "first_half" | "second_half" | null;
+}
+
+export interface LeaveStatusUpdatePayload {
+  status: "approved" | "rejected";
+  approver_comments?: string;
+}
+
+export interface LeavePolicy {
+  id: string;
+  role_id: string;
+  leave_type_id: string;
+  accrual_frequency: "monthly" | "quarterly" | "half_yearly" | "yearly" | "manual";
+  days_per_period: number;
+  max_carry_forward_days: number;
+  encashable: boolean;
+  created_at: string;
+}
