@@ -157,11 +157,19 @@ export function DashboardCalendar() {
     }
   };
 
-  const handleLogWorkSubmit = async (payload: TimesheetEntryCreatePayload) => {
+  const handleLogWorkSubmit = async (payloads: TimesheetEntryCreatePayload[]) => {
     setActionLoading(true);
     try {
-      await timesheetsApi.createEntry(payload);
-      success("Work Logged", `Recorded ${payload.hours_spent}h for ${payload.work_date}.`);
+      if (payloads.length === 1) {
+        await timesheetsApi.createEntry(payloads[0]);
+      } else {
+        await timesheetsApi.createBatchEntries({ entries: payloads });
+      }
+      const totalHours = payloads.reduce((acc, p) => acc + p.hours_spent, 0);
+      success(
+        "Work Logged",
+        `Recorded ${payloads.length} task entries (${totalHours.toFixed(1)}h) for ${payloads[0]?.work_date}.`
+      );
       setLogWorkModalOpen(false);
       setSelectedDateStr(null);
       setIsLoading(true);
@@ -374,8 +382,8 @@ export function DashboardCalendar() {
       <Modal
         isOpen={!!selectedDateStr}
         onClose={() => setSelectedDateStr(null)}
-        title={`Schedule & Activity: ${selectedDateStr}`}
-        description="Detailed overview of company holidays, leaves, and work logged on this date."
+        title={`Daily Schedule & Activity: ${selectedDateStr}`}
+        description="Consolidated timeline of scheduled leaves, logged project timesheets, and observed holidays for this date."
         maxWidth="xl"
       >
         {selectedDateStr && selectedDateEvents && (

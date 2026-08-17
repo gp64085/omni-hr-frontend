@@ -7,7 +7,12 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { Key } from "lucide-react";
 import { PAGINATION, SYSTEM_MODULES } from "@/constants";
 
-export function PermissionsCatalog() {
+interface PermissionsCatalogProps {
+  refreshTrigger?: number;
+  onOpenCreateModal?: () => void;
+}
+
+export function PermissionsCatalog({ refreshTrigger = 0 }: PermissionsCatalogProps) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [search, setSearch] = useState("");
   const [selectedModule, setSelectedModule] = useState<string>("all");
@@ -38,12 +43,12 @@ export function PermissionsCatalog() {
     return () => {
       isMounted = false;
     };
-  }, [search, selectedModule]);
+  }, [search, selectedModule, refreshTrigger]);
 
   return (
     <div className="space-y-4">
-      {/* Search & Module filter bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+      {/* Search & Module filter toolbar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
         <SearchInput
           value={search}
           onChange={(val) => {
@@ -51,37 +56,40 @@ export function PermissionsCatalog() {
             setIsLoading(true);
           }}
           placeholder="Search by code or description..."
-          className="w-full sm:w-72"
+          className="w-full md:w-80 shrink-0"
         />
 
-        <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {SYSTEM_MODULES.map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                setSelectedModule(m);
-                setIsLoading(true);
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                selectedModule === m
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-thin">
+          {SYSTEM_MODULES.map((m) => {
+            const isActive = selectedModule === m;
+            return (
+              <button
+                key={m}
+                onClick={() => {
+                  setSelectedModule(m);
+                  setIsLoading(true);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                }`}
+              >
+                {m}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {isLoading ? (
-        <div className="p-8 text-center bg-slate-900/60 border border-slate-800 rounded-2xl">
+        <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-2xl">
           <div className="w-8 h-8 border-3 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mx-auto mb-3" />
           <p className="text-xs text-slate-400">Loading catalog...</p>
         </div>
       ) : permissions.length === 0 ? (
-        <div className="p-8 text-center bg-slate-900/60 border border-slate-800 rounded-2xl text-xs text-slate-400">
-          No system permissions found.
+        <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-2xl text-xs text-slate-400">
+          No system permissions found matching the criteria.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -93,14 +101,16 @@ export function PermissionsCatalog() {
               <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
                 <Key className="w-4 h-4" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-white font-mono">{p.code}</span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 uppercase">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 uppercase">
                     {p.module}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">{p.description}</p>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                  {p.description || "No description provided."}
+                </p>
               </div>
             </div>
           ))}

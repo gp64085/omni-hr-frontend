@@ -1,3 +1,13 @@
+export interface Department {
+  id: string;
+  name: string;
+}
+
+export interface Designation {
+  id: string;
+  title: string;
+}
+
 export interface ProfileUpdatePayload {
   phone_number?: string;
   emergency_contact?: string;

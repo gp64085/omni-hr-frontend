@@ -9,22 +9,13 @@ import { useAuthStore } from "@/store/use-auth-store";
 import { usersApi } from "@/features/users/api/users-api";
 import { useToast } from "@/components/providers/ToastProvider";
 import { getApiErrorMessage } from "@/lib/error-utils";
-import {
-  User,
-  Phone,
-  Building,
-  CreditCard,
-  FileText,
-  ShieldCheck,
-  Save,
-  CheckCircle2,
-} from "lucide-react";
+import { User, Phone, Building, CreditCard, FileText, ShieldCheck, Save } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuthStore();
   const { success, error } = useToast();
 
-  const [activeTab, setActiveTab] = useState<"personal" | "banking" | "security">("personal");
+  const [activeTab, setActiveTab] = useState<"personal" | "banking">("personal");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
   const [address, setAddress] = useState("");
@@ -141,16 +132,6 @@ export default function ProfilePage() {
           >
             Banking & Statutory
           </button>
-          <button
-            onClick={() => setActiveTab("security")}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "security"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-white hover:bg-slate-900"
-            }`}
-          >
-            Assigned Permissions
-          </button>
         </div>
 
         {/* Tab 1: Personal Details */}
@@ -252,44 +233,6 @@ export default function ProfilePage() {
               </Button>
             </div>
           </form>
-        )}
-
-        {/* Tab 3: Security & Permissions */}
-        {activeTab === "security" && (
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm space-y-4">
-            <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-indigo-400" />
-              <span>Effective RBAC Permissions</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              These permissions are granted to your account via the{" "}
-              <strong className="text-white capitalize">
-                {user?.role?.name ? user.role.name.replace("_", " ") : "employee"}
-              </strong>{" "}
-              role.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2">
-              {user?.role?.permissions && user.role.permissions.length > 0 ? (
-                user.role.permissions.map((p) => (
-                  <div
-                    key={p.id}
-                    className="p-3 rounded-xl bg-slate-800/40 border border-slate-800 flex items-start gap-2.5"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-semibold text-white font-mono">{p.code}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{p.description}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-xs text-slate-500 col-span-full py-4 text-center">
-                  Standard employee privileges active.
-                </div>
-              )}
-            </div>
-          </div>
         )}
       </div>
     </AppShell>

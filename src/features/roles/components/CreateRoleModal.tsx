@@ -73,8 +73,8 @@ export function CreateRoleModal({ isOpen, onClose, onSubmit, isLoading }: Create
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create Custom Role"
-      description="Define a new granular access role with assigned system permissions."
+      title="Create Custom Security Role"
+      description="Configure role identity and assign granular system permission policies across organizational modules."
       maxWidth="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">

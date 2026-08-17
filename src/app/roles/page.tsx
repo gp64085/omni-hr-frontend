@@ -6,12 +6,18 @@ import { RolesListTable } from "@/features/roles/components/RolesListTable";
 import { CreateRoleModal } from "@/features/roles/components/CreateRoleModal";
 import { EditRoleModal } from "@/features/roles/components/EditRoleModal";
 import { PermissionsCatalog } from "@/features/roles/components/PermissionsCatalog";
+import { CreatePermissionModal } from "@/features/roles/components/CreatePermissionModal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { ShieldCheck, Plus, Key } from "lucide-react";
 import { rolesApi } from "@/features/roles/api/roles-api";
-import { Role, RoleCreatePayload, RoleUpdatePayload } from "@/features/roles/types/role-types";
+import {
+  Role,
+  RoleCreatePayload,
+  RoleUpdatePayload,
+  PermissionCreatePayload,
+} from "@/features/roles/types/role-types";
 import { useAuthStore } from "@/store/use-auth-store";
 import { useToast } from "@/components/providers/ToastProvider";
 import { getApiErrorMessage } from "@/lib/error-utils";
@@ -26,7 +32,8 @@ export default function RolesPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createRoleModalOpen, setCreateRoleModalOpen] = useState(false);
+  const [createPermModalOpen, setCreatePermModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -63,11 +70,25 @@ export default function RolesPage() {
     try {
       await rolesApi.createRole(payload);
       success("Role Created", `Custom role '${payload.name}' has been created.`);
-      setCreateModalOpen(false);
+      setCreateRoleModalOpen(false);
       setIsLoading(true);
       setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       error("Failed to create role", getApiErrorMessage(err));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCreatePermission = async (payload: PermissionCreatePayload) => {
+    setActionLoading(true);
+    try {
+      await rolesApi.createPermission(payload);
+      success("Permission Registered", `Created system permission '${payload.code}'.`);
+      setCreatePermModalOpen(false);
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (err) {
+      error("Creation Failed", getApiErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -116,16 +137,28 @@ export default function RolesPage() {
       title="Roles & Access Control (RBAC)"
       subtitle="Configure enterprise security roles and granular permission policies"
       actions={
-        canWrite &&
-        activeTab === "roles" && (
-          <Button
-            variant="gradient"
-            onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Custom Role</span>
-          </Button>
+        canWrite && (
+          <div className="flex items-center gap-2">
+            {activeTab === "roles" ? (
+              <Button
+                variant="gradient"
+                onClick={() => setCreateRoleModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Custom Role</span>
+              </Button>
+            ) : (
+              <Button
+                variant="gradient"
+                onClick={() => setCreatePermModalOpen(true)}
+                className="flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Register Permission</span>
+              </Button>
+            )}
+          </div>
         )
       }
     >
@@ -143,13 +176,23 @@ export default function RolesPage() {
             onDelete={(r) => setDeleteTarget(r)}
           />
         ) : (
-          <PermissionsCatalog />
+          <PermissionsCatalog
+            refreshTrigger={refreshTrigger}
+            onOpenCreateModal={() => setCreatePermModalOpen(true)}
+          />
         )}
 
         <CreateRoleModal
-          isOpen={createModalOpen}
-          onClose={() => setCreateModalOpen(false)}
+          isOpen={createRoleModalOpen}
+          onClose={() => setCreateRoleModalOpen(false)}
           onSubmit={handleCreateRole}
+          isLoading={actionLoading}
+        />
+
+        <CreatePermissionModal
+          isOpen={createPermModalOpen}
+          onClose={() => setCreatePermModalOpen(false)}
+          onSubmit={handleCreatePermission}
           isLoading={actionLoading}
         />
 

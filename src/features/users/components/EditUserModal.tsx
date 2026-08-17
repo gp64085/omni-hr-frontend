@@ -21,8 +21,8 @@ export function EditUserModal({ isOpen, onClose, user, onSubmit, isLoading }: Ed
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Edit Account: ${user.first_name} ${user.last_name}`}
-      description="Update profile names, assigned RBAC role, or account active status."
+      title={`Edit Profile: ${user.first_name} ${user.last_name}`}
+      description="Modify workforce credentials, organizational designation, department affiliation, and security role."
     >
       <EditUserForm
         key={user.id}

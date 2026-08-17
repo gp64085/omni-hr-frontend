@@ -17,6 +17,13 @@ export const timesheetsApi = {
     return res.data;
   },
 
+  createBatchEntries: async (payload: {
+    entries: TimesheetEntryCreatePayload[];
+  }): Promise<StandardApiResponse<TimesheetEntry[]>> => {
+    const res = await apiClient.post("/timesheets/entries/batch", payload);
+    return res.data;
+  },
+
   listEntries: async (params?: {
     page?: number;
     limit?: number;

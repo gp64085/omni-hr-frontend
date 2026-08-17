@@ -26,8 +26,8 @@ export function AuditDetailsModal({ isOpen, onClose, log }: AuditDetailsModalPro
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Audit Event Details"
-      description={`Log ID: ${log.id}`}
+      title="Audit Event Inspection"
+      description={`Immutable compliance and audit trail record (${log.id})`}
       maxWidth="2xl"
     >
       <div className="space-y-4">

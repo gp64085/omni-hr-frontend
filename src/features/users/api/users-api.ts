@@ -1,5 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 import {
+  Department,
+  Designation,
   ProfileUpdatePayload,
   UserCreatePayload,
   UserListParams,
@@ -28,6 +30,16 @@ export const usersApi = {
 
   listUsers: async (params?: UserListParams): Promise<StandardApiResponse<UserProfile[]>> => {
     const res = await apiClient.get("/users", { params });
+    return res.data;
+  },
+
+  listDepartments: async (): Promise<StandardApiResponse<Department[]>> => {
+    const res = await apiClient.get("/users/departments");
+    return res.data;
+  },
+
+  listDesignations: async (): Promise<StandardApiResponse<Designation[]>> => {
+    const res = await apiClient.get("/users/designations");
     return res.data;
   },
 

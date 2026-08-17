@@ -91,11 +91,19 @@ export default function TimesheetsPage() {
     };
   }, [weekOffset, canApprove, refreshTrigger, error]);
 
-  const handleCreateEntry = async (payload: TimesheetEntryCreatePayload) => {
+  const handleCreateEntries = async (payloads: TimesheetEntryCreatePayload[]) => {
     setActionLoading(true);
     try {
-      await timesheetsApi.createEntry(payload);
-      success("Work Logged", `Recorded ${payload.hours_spent}h for ${payload.work_date}.`);
+      if (payloads.length === 1) {
+        await timesheetsApi.createEntry(payloads[0]);
+      } else {
+        await timesheetsApi.createBatchEntries({ entries: payloads });
+      }
+      const totalHours = payloads.reduce((acc, p) => acc + p.hours_spent, 0);
+      success(
+        "Work Logged",
+        `Recorded ${payloads.length} task entries (${totalHours.toFixed(1)}h) for ${payloads[0]?.work_date}.`
+      );
       setLogModalOpen(false);
       setIsLoading(true);
       setRefreshTrigger((prev) => prev + 1);
@@ -247,7 +255,7 @@ export default function TimesheetsPage() {
         <LogTimesheetModal
           isOpen={logModalOpen}
           onClose={() => setLogModalOpen(false)}
-          onSubmit={handleCreateEntry}
+          onSubmit={handleCreateEntries}
           isLoading={actionLoading}
         />
 

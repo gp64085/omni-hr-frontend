@@ -42,8 +42,8 @@ export function CreateHolidayModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Add Corporate Holiday"
-      description="Register an official non-working holiday on the company calendar."
+      title="Add Organization Holiday"
+      description="Schedule an official corporate holiday and sync non-working calendar dates across all departments."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input

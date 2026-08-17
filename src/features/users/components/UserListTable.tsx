@@ -4,7 +4,7 @@ import React from "react";
 import { UserProfile } from "@/types/user";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable, Column } from "@/components/ui/DataTable";
-import { Edit2, Trash2, Mail, Shield, Building2, Briefcase } from "lucide-react";
+import { Edit2, Trash2, Mail, Shield, Building2, Briefcase, UserCheck } from "lucide-react";
 import { useAuthStore } from "@/store/use-auth-store";
 
 interface UserListTableProps {
@@ -18,6 +18,9 @@ export function UserListTable({ users, isLoading, onEdit, onDelete }: UserListTa
   const { hasPermission, user: currentUser } = useAuthStore();
   const canWrite = hasPermission("users:write");
   const canDelete = hasPermission("users:delete");
+
+  // Lookup map for manager names
+  const userMap = new Map(users.map((u) => [u.id, `${u.first_name} ${u.last_name}`]));
 
   const columns: Column<UserProfile>[] = [
     {
@@ -44,8 +47,8 @@ export function UserListTable({ users, isLoading, onEdit, onDelete }: UserListTa
       header: "Department & Title",
       cell: (u) => (
         <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 text-white font-medium">
-            <Briefcase className="w-3 h-3 text-slate-400" />
+          <div className="flex items-center gap-1.5 text-white font-medium text-xs">
+            <Briefcase className="w-3 h-3 text-indigo-400" />
             <span>{u.designation?.title || "Staff Member"}</span>
           </div>
           <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
@@ -54,6 +57,18 @@ export function UserListTable({ users, isLoading, onEdit, onDelete }: UserListTa
           </div>
         </div>
       ),
+    },
+    {
+      header: "Reporting Manager",
+      cell: (u) => {
+        const managerName = u.manager_id ? userMap.get(u.manager_id) : null;
+        return (
+          <div className="flex items-center gap-1.5 text-xs text-slate-300">
+            <UserCheck className="w-3.5 h-3.5 text-slate-500" />
+            <span>{managerName || "Self / Top Executive"}</span>
+          </div>
+        );
+      },
     },
     {
       header: "Role / Access",
@@ -87,7 +102,7 @@ export function UserListTable({ users, isLoading, onEdit, onDelete }: UserListTa
               <button
                 onClick={() => onEdit(u)}
                 className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                title="Edit User"
+                title="Edit Employee (Role, Title, Manager, Dept)"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -96,7 +111,7 @@ export function UserListTable({ users, isLoading, onEdit, onDelete }: UserListTa
               <button
                 onClick={() => onDelete(u)}
                 className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                title="Delete User"
+                title="Deactivate Account"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

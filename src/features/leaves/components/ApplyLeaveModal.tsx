@@ -64,8 +64,8 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit, isLoading }: ApplyL
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Apply for Leave"
-      description="Submit a leave request. Non-working days and official holidays are automatically excluded."
+      title="Submit Leave Application"
+      description="Request scheduled time off or sick leave. Working days and corporate holidays are automatically calculated."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Select

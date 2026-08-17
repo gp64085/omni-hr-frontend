@@ -1,5 +1,11 @@
 import { apiClient } from "@/lib/api-client";
-import { Permission, Role, RoleCreatePayload, RoleUpdatePayload } from "../types/role-types";
+import {
+  Permission,
+  PermissionCreatePayload,
+  Role,
+  RoleCreatePayload,
+  RoleUpdatePayload,
+} from "../types/role-types";
 import { StandardApiResponse } from "@/types/api";
 
 export const rolesApi = {
@@ -46,6 +52,13 @@ export const rolesApi = {
     module?: string;
   }): Promise<StandardApiResponse<Permission[]>> => {
     const res = await apiClient.get("/permissions", { params });
+    return res.data;
+  },
+
+  createPermission: async (
+    payload: PermissionCreatePayload
+  ): Promise<StandardApiResponse<Permission>> => {
+    const res = await apiClient.post("/permissions", payload);
     return res.data;
   },
 };

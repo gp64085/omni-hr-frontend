@@ -128,8 +128,10 @@ export function TeamApprovalsQueue({
       <Modal
         isOpen={!!selectedReq}
         onClose={() => setSelectedReq(null)}
-        title={actionType === "approved" ? "Approve Leave Request" : "Reject Leave Request"}
-        description={`Confirm decision for ${selectedReq?.user?.first_name} ${selectedReq?.user?.last_name}'s leave`}
+        title={
+          actionType === "approved" ? "Approve Leave Application" : "Decline Leave Application"
+        }
+        description={`Review and finalize formal leave decision for ${selectedReq?.user?.first_name} ${selectedReq?.user?.last_name}.`}
       >
         <div className="space-y-4">
           <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1 text-xs text-slate-300">

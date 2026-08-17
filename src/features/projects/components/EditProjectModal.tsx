@@ -27,7 +27,7 @@ export function EditProjectModal({
       isOpen={isOpen}
       onClose={onClose}
       title={`Edit Project: ${project.name}`}
-      description="Update project parameters and status."
+      description="Update project scope, active status, timeline deliverables, and departmental team allocations."
     >
       <EditProjectForm
         key={project.id}
