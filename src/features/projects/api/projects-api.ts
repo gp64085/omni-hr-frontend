@@ -1,30 +1,19 @@
-import { apiClient } from "@/lib/api-client";
+import { createCrudApi } from "@/lib/api-factory";
 import { Project, ProjectCreatePayload, ProjectUpdatePayload } from "../types/project-types";
-import { StandardApiResponse } from "@/types/api";
+
+const baseProjectsApi = createCrudApi<
+  Project,
+  ProjectCreatePayload,
+  ProjectUpdatePayload,
+  { department_id?: string }
+>("/projects");
 
 export const projectsApi = {
-  listProjects: async (params?: {
-    department_id?: string;
-  }): Promise<StandardApiResponse<Project[]>> => {
-    const res = await apiClient.get("/projects", { params });
-    return res.data;
-  },
+  ...baseProjectsApi,
 
-  getProjectById: async (id: string): Promise<StandardApiResponse<Project>> => {
-    const res = await apiClient.get(`/projects/${id}`);
-    return res.data;
-  },
-
-  createProject: async (payload: ProjectCreatePayload): Promise<StandardApiResponse<Project>> => {
-    const res = await apiClient.post("/projects", payload);
-    return res.data;
-  },
-
-  updateProject: async (
-    id: string,
-    payload: ProjectUpdatePayload
-  ): Promise<StandardApiResponse<Project>> => {
-    const res = await apiClient.put(`/projects/${id}`, payload);
-    return res.data;
-  },
+  // Domain method aliases
+  listProjects: baseProjectsApi.list,
+  getProjectById: baseProjectsApi.getById,
+  createProject: baseProjectsApi.create,
+  updateProject: baseProjectsApi.update,
 };

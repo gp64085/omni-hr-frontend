@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { rolesApi } from "../api/roles-api";
 import { Permission, RoleCreatePayload } from "../types/role-types";
 import { CheckSquare, Square } from "lucide-react";
@@ -70,13 +70,7 @@ export function CreateRoleModal({ isOpen, onClose, onSubmit, isLoading }: Create
   });
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Create Custom Role"
-      description="Define a new granular access role with assigned system permissions."
-      maxWidth="2xl"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Create Role" maxWidth="2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Role Identifier / Name"
@@ -161,14 +155,7 @@ export function CreateRoleModal({ isOpen, onClose, onSubmit, isLoading }: Create
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="gradient" isLoading={isLoading}>
-            Save Custom Role
-          </Button>
-        </div>
+        <ModalFooter onCancel={onClose} submitLabel="Save Custom Role" isLoading={isLoading} />
       </form>
     </Modal>
   );

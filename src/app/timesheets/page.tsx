@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { WeeklySummaryBar } from "@/features/timesheets/components/WeeklySummaryBar";
 import { WeeklyTimesheetGrid } from "@/features/timesheets/components/WeeklyTimesheetGrid";
@@ -9,136 +9,70 @@ import { LogTimesheetModal } from "@/features/timesheets/components/LogTimesheet
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
-import { Clock, CheckSquare, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import { timesheetsApi } from "@/features/timesheets/api/timesheets-api";
-import {
-  TimesheetEntry,
-  TimesheetEntryCreatePayload,
-  WeeklyTimesheetSummary,
-} from "@/features/timesheets/types/timesheet-types";
+import { Clock, CheckSquare, Plus, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { TimesheetEntryCreatePayload } from "@/features/timesheets/types/timesheet-types";
 import { useAuthStore } from "@/store/use-auth-store";
-import { useToast } from "@/components/providers/ToastProvider";
-import { getWeekDates } from "@/lib/date-utils";
-import { getApiErrorMessage } from "@/lib/error-utils";
-import { PAGINATION, PERMISSIONS, TIMESHEET_STATUS } from "@/constants";
+import { getWeekDates, formatDisplayDate } from "@/lib/date-utils";
+import { PERMISSIONS, PAGINATION } from "@/constants";
+import {
+  useTimesheetEntriesQuery,
+  useWeeklySummaryQuery,
+  useManagerTimesheetReviewQuery,
+  useLogTimesheetMutation,
+  useDeleteTimesheetMutation,
+  useUpdateTimesheetStatusMutation,
+} from "@/features/timesheets/hooks/use-timesheets-queries";
 
 export default function TimesheetsPage() {
-  const { hasPermission } = useAuthStore();
-  const { success, error } = useToast();
-
+  const { user, hasPermission } = useAuthStore();
   const [activeTab, setActiveTab] = useState("my_timesheet");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [entries, setEntries] = useState<TimesheetEntry[]>([]);
-  const [reviewEntries, setReviewEntries] = useState<TimesheetEntry[]>([]);
-  const [summary, setSummary] = useState<WeeklyTimesheetSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Modals & confirmation targets
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [submitWeeklyConfirmOpen, setSubmitWeeklyConfirmOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const canApprove = hasPermission(PERMISSIONS.TIMESHEET_APPROVE);
 
-  useEffect(() => {
-    let isMounted = true;
-    const { startDate, endDate } = getWeekDates(weekOffset);
+  const { startDate, endDate } = getWeekDates(weekOffset);
 
-    const loadTimesheetData = async () => {
-      try {
-        const entriesRes = await timesheetsApi.listEntries({
-          start_date: startDate,
-          end_date: endDate,
-          limit: PAGINATION.DEFAULT_LIMIT,
-        });
-        if (isMounted && entriesRes.data) {
-          setEntries(entriesRes.data);
-        }
+  // Queries
+  const { data: entries = [], isLoading: isEntriesLoading } = useTimesheetEntriesQuery({
+    start_date: startDate,
+    end_date: endDate,
+    user_id: user?.id,
+    limit: PAGINATION.MAX_LIMIT,
+  });
 
-        const summaryRes = await timesheetsApi.getWeeklySummary({
-          start_date: startDate,
-          end_date: endDate,
-        });
-        if (isMounted && summaryRes.data) {
-          setSummary(summaryRes.data);
-        }
+  const { data: summary = null, isLoading: isSummaryLoading } = useWeeklySummaryQuery(
+    startDate,
+    endDate
+  );
 
-        if (canApprove) {
-          const reviewRes = await timesheetsApi.listEntries({
-            status: TIMESHEET_STATUS.SUBMITTED,
-            limit: PAGINATION.DEFAULT_LIMIT,
-          });
-          if (isMounted && reviewRes.data) {
-            setReviewEntries(reviewRes.data);
-          }
-        }
-      } catch (err) {
-        if (isMounted) {
-          error("Failed to load timesheet data", getApiErrorMessage(err));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+  const { data: reviewEntries = [], isLoading: isReviewLoading } = useManagerTimesheetReviewQuery(
+    {
+      start_date: startDate,
+      end_date: endDate,
+      limit: PAGINATION.MAX_LIMIT,
+    },
+    { enabled: canApprove }
+  );
 
-    loadTimesheetData();
-    return () => {
-      isMounted = false;
-    };
-  }, [weekOffset, canApprove, refreshTrigger, error]);
+  // Mutations
+  const logMutation = useLogTimesheetMutation();
+  const deleteMutation = useDeleteTimesheetMutation();
+  const updateStatusMutation = useUpdateTimesheetStatusMutation();
+
+  const isLoading = isEntriesLoading || isSummaryLoading;
 
   const handleCreateEntry = async (payload: TimesheetEntryCreatePayload) => {
-    setActionLoading(true);
-    try {
-      await timesheetsApi.createEntry(payload);
-      success("Work Logged", `Recorded ${payload.hours_spent}h for ${payload.work_date}.`);
-      setLogModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Log Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await logMutation.mutateAsync(payload);
+    setLogModalOpen(false);
   };
 
   const handleConfirmDelete = async () => {
     if (!deleteTargetId) return;
-    setActionLoading(true);
-    try {
-      await timesheetsApi.deleteEntry(deleteTargetId);
-      success("Entry Deleted", "Timesheet record removed.");
-      setDeleteTargetId(null);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Delete Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleConfirmSubmitWeekly = async () => {
-    const { startDate, endDate } = getWeekDates(weekOffset);
-    setActionLoading(true);
-    try {
-      const res = await timesheetsApi.submitTimesheets({
-        start_date: startDate,
-        end_date: endDate,
-      });
-      success("Timesheet Submitted", res.data?.message || "Submitted for manager review.");
-      setSubmitWeeklyConfirmOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Submission Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await deleteMutation.mutateAsync(deleteTargetId);
+    setDeleteTargetId(null);
   };
 
   const handleUpdateReviewStatus = async (
@@ -146,20 +80,10 @@ export default function TimesheetsPage() {
     status: "approved" | "rejected",
     reason?: string
   ) => {
-    try {
-      await timesheetsApi.updateEntryStatus(id, {
-        status,
-        rejection_reason: reason,
-      });
-      success(
-        status === "approved" ? "Timesheet Approved" : "Timesheet Rejected",
-        "Decision recorded."
-      );
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Decision Failed", getApiErrorMessage(err));
-    }
+    await updateStatusMutation.mutateAsync({
+      id,
+      payload: { status, rejection_reason: reason },
+    });
   };
 
   const tabs = [
@@ -176,54 +100,81 @@ export default function TimesheetsPage() {
       : []),
   ];
 
-  const { formattedRange, startDate, endDate } = getWeekDates(weekOffset);
-
   return (
     <AppShell
-      title="Timesheets & Work Tracking"
-      subtitle="Log daily project tasks, track billability, and submit weekly hours for sign-off"
+      title="Timesheets & Work Logs"
+      subtitle="Log daily work activities, track weekly hours, and approve team submissions"
       actions={
-        <Button
-          variant="gradient"
-          onClick={() => setLogModalOpen(true)}
-          className="flex items-center gap-2 text-xs py-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Log Daily Work</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="gradient"
+            onClick={() => setLogModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Log Daily Work</span>
+          </Button>
+        </div>
       }
     >
       <div className="space-y-6">
+        {/* Week Navigator */}
+        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs text-slate-400">Current Work Period</div>
+              <div className="text-sm font-bold text-white">
+                {formatDisplayDate(startDate)} – {formatDisplayDate(endDate)}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setWeekOffset((prev) => prev - 1)}
+              className="flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous Week</span>
+            </Button>
+
+            {weekOffset !== 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setWeekOffset(0)}
+                className="text-xs text-indigo-400 hover:text-indigo-300"
+              >
+                Jump to Current Week
+              </Button>
+            )}
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setWeekOffset((prev) => prev + 1)}
+              className="flex items-center gap-1"
+            >
+              <span>Next Week</span>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Weekly Metric Summary */}
         <WeeklySummaryBar summary={summary} isLoading={isLoading} />
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
           {activeTab === "my_timesheet" && (
-            <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-xl p-1 text-xs">
-              <button
-                onClick={() => {
-                  setWeekOffset((prev) => prev - 1);
-                  setIsLoading(true);
-                }}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                title="Previous Week"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="font-semibold text-slate-200 px-2">
-                {formattedRange} {weekOffset === 0 && "(This Week)"}
-              </span>
-              <button
-                onClick={() => {
-                  setWeekOffset((prev) => prev + 1);
-                  setIsLoading(true);
-                }}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                title="Next Week"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+            <div className="text-xs text-slate-400 px-1">
+              Logged entries for week: <strong className="text-white">{entries.length}</strong>
             </div>
           )}
         </div>
@@ -233,13 +184,11 @@ export default function TimesheetsPage() {
             entries={entries}
             isLoading={isLoading}
             onDelete={(id) => setDeleteTargetId(id)}
-            onSubmitWeekly={() => setSubmitWeeklyConfirmOpen(true)}
-            isSubmitting={actionLoading}
           />
         ) : (
           <ManagerTimesheetReview
             entries={reviewEntries}
-            isLoading={isLoading}
+            isLoading={isReviewLoading}
             onUpdateStatus={handleUpdateReviewStatus}
           />
         )}
@@ -248,7 +197,7 @@ export default function TimesheetsPage() {
           isOpen={logModalOpen}
           onClose={() => setLogModalOpen(false)}
           onSubmit={handleCreateEntry}
-          isLoading={actionLoading}
+          isLoading={logMutation.isPending}
         />
 
         <ConfirmDialog
@@ -259,18 +208,7 @@ export default function TimesheetsPage() {
           description="Are you sure you want to delete this daily work record? This cannot be undone."
           confirmText="Delete Entry"
           variant="danger"
-          isLoading={actionLoading}
-        />
-
-        <ConfirmDialog
-          isOpen={submitWeeklyConfirmOpen}
-          onClose={() => setSubmitWeeklyConfirmOpen(false)}
-          onConfirm={handleConfirmSubmitWeekly}
-          title="Submit Weekly Timesheet"
-          description={`Submit all draft work logs for the week (${startDate} to ${endDate}) for formal manager sign-off? Once submitted, entries are locked.`}
-          confirmText="Submit Timesheet"
-          variant="gradient"
-          isLoading={actionLoading}
+          isLoading={deleteMutation.isPending}
         />
       </div>
     </AppShell>

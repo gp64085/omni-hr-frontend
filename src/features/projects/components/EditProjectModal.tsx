@@ -23,12 +23,7 @@ export function EditProjectModal({
   if (!project) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Edit Project: ${project.name}`}
-      description="Update project parameters and status."
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Edit Project: ${project.name}`}>
       <EditProjectForm
         key={project.id}
         project={project}

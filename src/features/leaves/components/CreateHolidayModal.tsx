@@ -39,12 +39,7 @@ export function CreateHolidayModal({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Add Corporate Holiday"
-      description="Register an official non-working holiday on the company calendar."
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Holiday">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Holiday Name"

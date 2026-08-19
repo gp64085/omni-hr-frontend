@@ -3,7 +3,6 @@
  */
 export const SYSTEM_MODULES = [
   "all",
-  "auth",
   "users",
   "roles",
   "leave",
@@ -12,5 +11,3 @@ export const SYSTEM_MODULES = [
   "projects",
   "audit",
 ] as const;
-
-export type SystemModule = (typeof SYSTEM_MODULES)[number];

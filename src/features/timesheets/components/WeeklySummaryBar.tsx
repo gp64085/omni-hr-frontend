@@ -5,6 +5,8 @@ import { WeeklyTimesheetSummary } from "../types/timesheet-types";
 import { Clock } from "lucide-react";
 import { TIMESHEET_CONSTANTS } from "@/constants";
 
+import { formatDecimalHoursToHHMM } from "@/lib/date-utils";
+
 interface WeeklySummaryBarProps {
   summary: WeeklyTimesheetSummary | null;
   isLoading: boolean;
@@ -36,7 +38,7 @@ export function WeeklySummaryBar({ summary, isLoading }: WeeklySummaryBarProps) 
             </h3>
             <p className="text-xs text-slate-400">
               Standard corporate expectation:{" "}
-              <strong className="text-slate-200">{target.toFixed(1)} hours / week</strong>
+              <strong className="text-slate-200">{formatDecimalHoursToHHMM(target)} / week</strong>
             </p>
           </div>
         </div>
@@ -44,18 +46,22 @@ export function WeeklySummaryBar({ summary, isLoading }: WeeklySummaryBarProps) 
         <div className="flex items-center gap-4 text-xs">
           <div className="text-right">
             <div className="text-slate-400 text-[11px]">Total Logged</div>
-            <div className="text-lg font-extrabold text-white">{total.toFixed(1)} hrs</div>
+            <div className="text-lg font-extrabold text-white font-mono">
+              {formatDecimalHoursToHHMM(total)}
+            </div>
           </div>
           <div className="h-8 w-px bg-slate-800" />
           <div className="text-right">
             <div className="text-emerald-400 text-[11px]">Billable</div>
-            <div className="text-lg font-extrabold text-emerald-400">{billable.toFixed(1)} hrs</div>
+            <div className="text-lg font-extrabold text-emerald-400 font-mono">
+              {formatDecimalHoursToHHMM(billable)}
+            </div>
           </div>
           <div className="h-8 w-px bg-slate-800" />
           <div className="text-right">
             <div className="text-slate-400 text-[11px]">Internal / Admin</div>
-            <div className="text-lg font-extrabold text-slate-300">
-              {nonBillable.toFixed(1)} hrs
+            <div className="text-lg font-extrabold text-slate-300 font-mono">
+              {formatDecimalHoursToHHMM(nonBillable)}
             </div>
           </div>
         </div>

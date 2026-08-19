@@ -1,54 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuditLogsTable } from "@/features/audit/components/AuditLogsTable";
 import { AuditDetailsModal } from "@/features/audit/components/AuditDetailsModal";
 import { FilterBar } from "@/components/ui/FilterBar";
-import { auditApi } from "@/features/audit/api/audit-api";
 import { AuditLog } from "@/features/audit/types/audit-types";
-import { useToast } from "@/components/providers/ToastProvider";
-import { getApiErrorMessage } from "@/lib/error-utils";
 import { PAGINATION, SYSTEM_MODULES } from "@/constants";
+import { useAuditLogsQuery } from "@/features/audit/hooks/use-audit-queries";
 
 export default function AuditLogsPage() {
-  const { error } = useToast();
-  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [page, setPage] = useState(PAGINATION.DEFAULT_PAGE);
-  const [total, setTotal] = useState(0);
   const [selectedModule, setSelectedModule] = useState<string>("all");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchLogs = async () => {
-      try {
-        const res = await auditApi.listLogs({
-          page,
-          limit: PAGINATION.DEFAULT_LIMIT,
-          module: selectedModule !== "all" ? selectedModule : undefined,
-        });
-        if (isMounted && res.data) {
-          setLogs(res.data);
-          setTotal(res.meta?.total || res.data.length);
-        }
-      } catch (err) {
-        if (isMounted) {
-          error("Failed to load audit logs", getApiErrorMessage(err));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+  const { data: logsData, isLoading } = useAuditLogsQuery({
+    page,
+    limit: PAGINATION.DEFAULT_LIMIT,
+    module: selectedModule !== "all" ? selectedModule : undefined,
+  });
 
-    fetchLogs();
-    return () => {
-      isMounted = false;
-    };
-  }, [page, selectedModule, error]);
+  const logs = logsData?.data || [];
+  const total = logsData?.meta?.total || logs.length;
 
   return (
     <AppShell
@@ -64,7 +37,6 @@ export default function AuditLogsPage() {
                 onClick={() => {
                   setSelectedModule(m);
                   setPage(1);
-                  setIsLoading(true);
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                   selectedModule === m

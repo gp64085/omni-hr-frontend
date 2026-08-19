@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { UserListTable } from "@/features/users/components/UserListTable";
 import { CreateUserModal } from "@/features/users/components/CreateUserModal";
@@ -10,108 +10,56 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { Button } from "@/components/ui/Button";
 import { UserPlus } from "lucide-react";
-import { usersApi } from "@/features/users/api/users-api";
 import { UserProfile } from "@/types/user";
 import { UserCreatePayload, UserUpdatePayload } from "@/features/users/types/user-types";
 import { useAuthStore } from "@/store/use-auth-store";
-import { useToast } from "@/components/providers/ToastProvider";
-import { getApiErrorMessage } from "@/lib/error-utils";
 import { PAGINATION, PERMISSIONS } from "@/constants";
+import {
+  useUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+} from "@/features/users/hooks/use-users-queries";
 
 export default function EmployeesPage() {
   const { hasPermission } = useAuthStore();
-  const { success, error } = useToast();
-  const [users, setUsers] = useState<UserProfile[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(PAGINATION.DEFAULT_PAGE);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchUsers = async () => {
-      try {
-        const res = await usersApi.listUsers({
-          page,
-          limit: PAGINATION.DEFAULT_LIMIT,
-          search: search || undefined,
-        });
-        if (isMounted && res.data) {
-          setUsers(res.data);
-          setTotal(res.meta?.total || res.data.length);
-        }
-      } catch (err) {
-        if (isMounted) {
-          error("Failed to load employees", getApiErrorMessage(err));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+  // Queries
+  const { data: usersData, isLoading } = useUsersQuery({
+    page,
+    limit: PAGINATION.DEFAULT_LIMIT,
+    search: search || undefined,
+  });
 
-    fetchUsers();
-    return () => {
-      isMounted = false;
-    };
-  }, [page, search, refreshTrigger, error]);
+  const users = usersData?.data || [];
+  const total = usersData?.meta?.total || users.length;
+
+  // Mutations
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+  const deleteMutation = useDeleteUserMutation();
 
   const handleCreateUser = async (payload: UserCreatePayload) => {
-    setActionLoading(true);
-    try {
-      await usersApi.createUser(payload);
-      success("Employee Created", `${payload.first_name} ${payload.last_name} has been added.`);
-      setCreateModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Failed to create employee", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await createMutation.mutateAsync(payload);
+    setCreateModalOpen(false);
   };
 
   const handleUpdateUser = async (id: string, payload: UserUpdatePayload) => {
-    setActionLoading(true);
-    try {
-      await usersApi.updateUser(id, payload);
-      success("Employee Updated", "Account settings have been updated.");
-      setEditModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Failed to update employee", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await updateMutation.mutateAsync({ id, payload });
+    setEditModalOpen(false);
   };
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setActionLoading(true);
-    try {
-      await usersApi.deleteUser(deleteTarget.id);
-      success(
-        "Employee Deleted",
-        `${deleteTarget.first_name} ${deleteTarget.last_name} was removed.`
-      );
-      setDeleteTarget(null);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Delete Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await deleteMutation.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const canCreate = hasPermission(PERMISSIONS.USERS_WRITE);
@@ -140,7 +88,6 @@ export default function EmployeesPage() {
             onChange={(val) => {
               setSearch(val);
               setPage(1);
-              setIsLoading(true);
             }}
             placeholder="Search by name or email..."
             className="w-full sm:w-80"
@@ -166,7 +113,7 @@ export default function EmployeesPage() {
           isOpen={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
           onSubmit={handleCreateUser}
-          isLoading={actionLoading}
+          isLoading={createMutation.isPending}
         />
 
         <EditUserModal
@@ -174,7 +121,7 @@ export default function EmployeesPage() {
           onClose={() => setEditModalOpen(false)}
           user={selectedUser}
           onSubmit={handleUpdateUser}
-          isLoading={actionLoading}
+          isLoading={updateMutation.isPending}
         />
 
         <ConfirmDialog
@@ -185,7 +132,7 @@ export default function EmployeesPage() {
           description={`Are you sure you want to permanently remove ${deleteTarget?.first_name} ${deleteTarget?.last_name}? This action cannot be undone.`}
           confirmText="Delete Account"
           variant="danger"
-          isLoading={actionLoading}
+          isLoading={deleteMutation.isPending}
         />
       </div>
     </AppShell>

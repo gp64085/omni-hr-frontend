@@ -23,13 +23,7 @@ export function AuditDetailsModal({ isOpen, onClose, log }: AuditDetailsModalPro
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Audit Event Details"
-      description={`Log ID: ${log.id}`}
-      maxWidth="2xl"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Audit Event Details" maxWidth="2xl">
       <div className="space-y-4">
         {/* Metadata Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">

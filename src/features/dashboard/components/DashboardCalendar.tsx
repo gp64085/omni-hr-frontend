@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,170 +10,90 @@ import {
   Plus,
 } from "lucide-react";
 import clsx from "clsx";
-import { leavesApi, holidaysApi } from "@/features/leaves/api/leaves-api";
+import { leavesApi } from "@/features/leaves/api/leaves-api";
 import { timesheetsApi } from "@/features/timesheets/api/timesheets-api";
+import { LeaveRequestCreatePayload } from "@/features/leaves/types/leave-types";
 import {
-  LeaveRequest,
-  Holiday,
-  LeaveRequestCreatePayload,
-} from "@/features/leaves/types/leave-types";
-import {
-  TimesheetEntry,
   TimesheetEntryCreatePayload,
+  TimesheetProjectAllocation,
+  TimesheetTaskDetail,
 } from "@/features/timesheets/types/timesheet-types";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { ApplyLeaveModal } from "@/features/leaves/components/ApplyLeaveModal";
 import { LogTimesheetModal } from "@/features/timesheets/components/LogTimesheetModal";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useDashboardCalendar } from "@/features/dashboard/hooks/useDashboardCalendar";
 import { getApiErrorMessage } from "@/lib/error-utils";
-import { MONTH_NAMES, WEEK_DAYS_FULL, WEEK_DAYS_SHORT, PAGINATION } from "@/constants";
+import { formatDecimalHoursToHHMM } from "@/lib/date-utils";
+import { MONTH_NAMES, WEEK_DAYS_FULL, WEEK_DAYS_SHORT } from "@/constants";
 
 export function DashboardCalendar() {
   const { success, error } = useToast();
-  const today = new Date();
-  const [currentYear, setCurrentYear] = useState(today.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-indexed
 
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
-  const [holidays, setHolidays] = useState<Holiday[]>([]);
-  const [timesheets, setTimesheets] = useState<TimesheetEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    currentYear,
+    currentMonth,
+    todayStr,
+    isLoading,
+    daysInMonth,
+    startOffset,
+    refreshCalendar,
+    handlePrevMonth,
+    handleNextMonth,
+    handleJumpToday,
+    getEventsForDate,
+  } = useDashboardCalendar();
 
-  // Selected date inspector modal
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
-
-  // Sub-modals for quick actions from the calendar
   const [applyLeaveModalOpen, setApplyLeaveModalOpen] = useState(false);
   const [logWorkModalOpen, setLogWorkModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Load calendar events for current view
-  useEffect(() => {
-    let isMounted = true;
-    const fetchMonthData = async () => {
-      const firstDayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
-      const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const lastDayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const selectedDateEvents = useMemo(
+    () => (selectedDateStr ? getEventsForDate(selectedDateStr) : null),
+    [selectedDateStr, getEventsForDate]
+  );
 
+  const handleApplyLeaveSubmit = useCallback(
+    async (payload: LeaveRequestCreatePayload) => {
+      setActionLoading(true);
       try {
-        const [leavesRes, holidaysRes, timesheetRes] = await Promise.all([
-          leavesApi.listLeaveRequests({ limit: PAGINATION.MAX_LIMIT }).catch(() => ({ data: [] })),
-          holidaysApi.listHolidays(currentYear).catch(() => ({ data: [] })),
-          timesheetsApi
-            .listEntries({
-              start_date: firstDayStr,
-              end_date: lastDayStr,
-              limit: PAGINATION.MAX_LIMIT,
-            })
-            .catch(() => ({ data: [] })),
-        ]);
-
-        if (isMounted) {
-          if (leavesRes.data) setLeaves(leavesRes.data);
-          if (holidaysRes.data) setHolidays(holidaysRes.data);
-          if (timesheetRes.data) setTimesheets(timesheetRes.data);
-        }
+        await leavesApi.applyLeave(payload);
+        success("Leave Request Submitted", "Request sent for manager approval.");
+        setApplyLeaveModalOpen(false);
+        setSelectedDateStr(null);
+        refreshCalendar();
       } catch (err) {
-        console.error("Failed to load month calendar events", err);
+        error("Application Failed", getApiErrorMessage(err));
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        setActionLoading(false);
       }
-    };
+    },
+    [success, error, refreshCalendar]
+  );
 
-    fetchMonthData();
-    return () => {
-      isMounted = false;
-    };
-  }, [currentYear, currentMonth, refreshTrigger]);
-
-  const handlePrevMonth = () => {
-    setIsLoading(true);
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear((prev) => prev - 1);
-    } else {
-      setCurrentMonth((prev) => prev - 1);
-    }
-  };
-
-  const handleNextMonth = () => {
-    setIsLoading(true);
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear((prev) => prev + 1);
-    } else {
-      setCurrentMonth((prev) => prev + 1);
-    }
-  };
-
-  const handleJumpToday = () => {
-    const now = new Date();
-    setIsLoading(true);
-    setCurrentYear(now.getFullYear());
-    setCurrentMonth(now.getMonth());
-  };
-
-  // Month grid calculations
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0 is Sunday
-  const startOffset = (firstDayOfWeek + 6) % 7; // Monday = 0, Sunday = 6
-
-  // Helper to get events for a given YYYY-MM-DD
-  const getEventsForDate = (dateStr: string) => {
-    const dayHolidays = holidays.filter((h) => h.holiday_date === dateStr);
-    const dayLeaves = leaves.filter((l) => dateStr >= l.start_date && dateStr <= l.end_date);
-    const dayTimesheets = timesheets.filter((t) => t.work_date === dateStr);
-
-    const totalHours = dayTimesheets.reduce((acc, t) => acc + (t.hours_spent || 0), 0);
-
-    return {
-      holidays: dayHolidays,
-      leaves: dayLeaves,
-      timesheets: dayTimesheets,
-      totalHours,
-      hasEvents: dayHolidays.length > 0 || dayLeaves.length > 0 || dayTimesheets.length > 0,
-    };
-  };
-
-  const selectedDateEvents = selectedDateStr ? getEventsForDate(selectedDateStr) : null;
-
-  const handleApplyLeaveSubmit = async (payload: LeaveRequestCreatePayload) => {
-    setActionLoading(true);
-    try {
-      await leavesApi.applyLeave(payload);
-      success("Leave Request Submitted", "Request sent for manager approval.");
-      setApplyLeaveModalOpen(false);
-      setSelectedDateStr(null);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Application Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleLogWorkSubmit = async (payload: TimesheetEntryCreatePayload) => {
-    setActionLoading(true);
-    try {
-      await timesheetsApi.createEntry(payload);
-      success("Work Logged", `Recorded ${payload.hours_spent}h for ${payload.work_date}.`);
-      setLogWorkModalOpen(false);
-      setSelectedDateStr(null);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Log Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const todayStr = new Date().toISOString().split("T")[0];
+  const handleLogWorkSubmit = useCallback(
+    async (payload: TimesheetEntryCreatePayload) => {
+      setActionLoading(true);
+      try {
+        await timesheetsApi.createEntry(payload);
+        const totalHours = payload.hours_spent || 0;
+        success(
+          "Work Logged",
+          `Recorded timesheet entries (${totalHours.toFixed(1)}h) for ${payload.work_date}.`
+        );
+        setLogWorkModalOpen(false);
+        setSelectedDateStr(null);
+        refreshCalendar();
+      } catch (err) {
+        error("Log Failed", getApiErrorMessage(err));
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [success, error, refreshCalendar]
+  );
 
   return (
     <div className="space-y-4">
@@ -239,10 +159,6 @@ export function DashboardCalendar() {
             <span>Logged Hours (Timesheet)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span>Pending Leave Request</span>
-          </div>
-          <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
             <span>Approved Leave</span>
           </div>
@@ -305,7 +221,7 @@ export function DashboardCalendar() {
 
                     {events.totalHours > 0 && (
                       <span className="text-[10px] font-bold text-emerald-400 font-mono bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
-                        {events.totalHours.toFixed(1)}h
+                        {formatDecimalHoursToHHMM(events.totalHours)}
                       </span>
                     )}
                   </div>
@@ -327,17 +243,10 @@ export function DashboardCalendar() {
                     {events.leaves.map((l) => (
                       <div
                         key={l.id}
-                        className={clsx(
-                          "truncate text-[10px] px-1.5 py-0.5 rounded font-medium border",
-                          l.status === "approved"
-                            ? "bg-purple-500/15 border-purple-500/30 text-purple-300"
-                            : l.status === "pending"
-                              ? "bg-amber-500/15 border-amber-500/30 text-amber-300"
-                              : "bg-slate-800 border-slate-700 text-slate-400"
-                        )}
-                        title={`${l.leave_type?.name || "Leave"} (${l.status})`}
+                        className="truncate text-[10px] px-1.5 py-0.5 rounded font-medium border bg-purple-500/15 border-purple-500/30 text-purple-300"
+                        title={`🌴 ${l.leave_type?.name || "Leave"} (Approved)`}
                       >
-                        🌴 {l.leave_type?.name || "Leave"} ({l.status})
+                        🌴 {l.leave_type?.name || "Leave"}
                       </div>
                     ))}
 
@@ -346,9 +255,10 @@ export function DashboardCalendar() {
                       <div
                         key={t.id}
                         className="truncate text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono"
-                        title={`${t.hours_spent}h - ${t.activity_summary}`}
+                        title={`${formatDecimalHoursToHHMM(t.hours_spent)} - ${typeof t.activity_summary === "string" ? t.activity_summary : "Project Tasks"}`}
                       >
-                        ⏱️ {t.hours_spent}h {t.project_name || t.project?.code || ""}
+                        ⏱️ {formatDecimalHoursToHHMM(t.hours_spent)}{" "}
+                        {t.project_name || t.project?.code || ""}
                       </div>
                     ))}
                     {events.timesheets.length > 2 && (
@@ -370,34 +280,52 @@ export function DashboardCalendar() {
         </div>
       </div>
 
-      {/* Selected Day Inspector Modal */}
+      {/* Date Inspection Modal */}
       <Modal
-        isOpen={!!selectedDateStr}
+        isOpen={Boolean(selectedDateStr)}
         onClose={() => setSelectedDateStr(null)}
-        title={`Schedule & Activity: ${selectedDateStr}`}
-        description="Detailed overview of company holidays, leaves, and work logged on this date."
-        maxWidth="xl"
+        title={selectedDateStr ? `Activity for ${selectedDateStr}` : "Day Details"}
+        maxWidth="lg"
       >
-        {selectedDateStr && selectedDateEvents && (
-          <div className="space-y-5">
-            {/* Quick Actions for this Date */}
-            <div className="flex items-center gap-2 p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
-              <span className="text-xs font-semibold text-slate-400 pl-1">
-                Actions for {selectedDateStr}:
-              </span>
-              <div className="flex-1 flex justify-end gap-2">
+        {selectedDateEvents && selectedDateStr && (
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+              <div>
+                <div className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Date: {selectedDateStr}</span>
+                  {selectedDateStr === todayStr && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 uppercase">
+                      Today
+                    </span>
+                  )}
+                  {selectedDateEvents.isWeekend && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                      Weekend
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-slate-400 mt-0.5">
+                  Quickly request a leave or log your timesheet tasks for this date
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <Button
+                  type="button"
                   variant="secondary"
+                  size="sm"
                   onClick={() => setApplyLeaveModalOpen(true)}
-                  className="flex items-center gap-1 text-xs py-1.5"
+                  className="flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Apply Leave</span>
                 </Button>
                 <Button
-                  variant="gradient"
+                  type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={() => setLogWorkModalOpen(true)}
-                  className="flex items-center gap-1 text-xs py-1.5"
+                  className="flex items-center gap-1.5"
                 >
                   <Clock className="w-3.5 h-3.5" />
                   <span>Log Work</span>
@@ -430,11 +358,11 @@ export function DashboardCalendar() {
             <div className="space-y-2">
               <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
                 <CalendarIcon className="w-3.5 h-3.5" />
-                <span>Leave Status ({selectedDateEvents.leaves.length})</span>
+                <span>Approved Leaves ({selectedDateEvents.leaves.length})</span>
               </h4>
               {selectedDateEvents.leaves.length === 0 ? (
                 <div className="p-3 rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
-                  No leaves booked for this date.
+                  No approved leaves for this date.
                 </div>
               ) : (
                 selectedDateEvents.leaves.map((l) => (
@@ -446,8 +374,8 @@ export function DashboardCalendar() {
                       <span className="font-bold text-white capitalize">
                         {l.leave_type?.name || "Leave"}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-slate-800 text-slate-300 border border-slate-700">
-                        {l.status}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                        Approved
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-400">
@@ -471,8 +399,8 @@ export function DashboardCalendar() {
                   <span>Logged Timesheets ({selectedDateEvents.timesheets.length})</span>
                 </h4>
                 {selectedDateEvents.totalHours > 0 && (
-                  <span className="text-xs font-extrabold text-white">
-                    Total: {selectedDateEvents.totalHours.toFixed(1)} hrs
+                  <span className="text-xs font-extrabold text-white font-mono">
+                    Total: {formatDecimalHoursToHHMM(selectedDateEvents.totalHours)}
                   </span>
                 )}
               </div>
@@ -492,12 +420,53 @@ export function DashboardCalendar() {
                         {t.project_name || t.project?.name || "Project Work"}
                       </span>
                       <span className="font-extrabold font-mono text-emerald-400">
-                        {(t.hours_spent || 0).toFixed(1)} hrs
+                        {formatDecimalHoursToHHMM(t.hours_spent || 0)}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-300">{t.activity_summary}</p>
+                    {typeof t.activity_summary === "string" ? (
+                      <div className="text-[11px] text-slate-300">{t.activity_summary}</div>
+                    ) : Array.isArray(t.activity_summary) ? (
+                      <div className="space-y-0.5 pt-1">
+                        {t.activity_summary.map(
+                          (
+                            alloc:
+                              | TimesheetProjectAllocation
+                              | TimesheetTaskDetail
+                              | Record<string, unknown>,
+                            idx: number
+                          ) => {
+                            const tasks =
+                              "tasks" in alloc && Array.isArray(alloc.tasks) ? alloc.tasks : null;
+                            const projName =
+                              "project_name" in alloc && alloc.project_name
+                                ? alloc.project_name
+                                : "Project";
+                            const summary =
+                              "summary" in alloc && typeof alloc.summary === "string"
+                                ? alloc.summary
+                                : JSON.stringify(alloc);
+                            return (
+                              <div key={idx} className="text-[11px] text-slate-300">
+                                {tasks ? (
+                                  <div>
+                                    <span className="font-semibold text-indigo-300">
+                                      {String(projName)}:{" "}
+                                    </span>
+                                    <span>
+                                      {tasks.map((tsk) => String(tsk.summary || "")).join(", ")}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span>{summary}</span>
+                                )}
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    ) : null}
                     <div className="flex items-center gap-2 pt-0.5 text-[10px] text-slate-500">
-                      <span>{t.is_billable ? "Billable Client Time" : "Internal Activity"}</span>
+                      <span>Total: {(t.hours_spent || 0).toFixed(1)} hrs</span>
                       <span>•</span>
                       <span className="uppercase">{t.status}</span>
                     </div>
@@ -522,6 +491,8 @@ export function DashboardCalendar() {
           onClose={() => setApplyLeaveModalOpen(false)}
           onSubmit={handleApplyLeaveSubmit}
           isLoading={actionLoading}
+          defaultStartDate={selectedDateStr || todayStr}
+          defaultEndDate={selectedDateStr || todayStr}
         />
       )}
 
@@ -531,6 +502,7 @@ export function DashboardCalendar() {
           onClose={() => setLogWorkModalOpen(false)}
           onSubmit={handleLogWorkSubmit}
           isLoading={actionLoading}
+          defaultWorkDate={selectedDateStr || todayStr}
         />
       )}
     </div>

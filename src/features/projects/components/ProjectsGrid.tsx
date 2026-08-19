@@ -64,9 +64,22 @@ export function ProjectsGrid({ projects, isLoading, onEdit }: ProjectsGridProps)
               <StatusBadge status={p.status || "active"} />
             </div>
 
-            <p className="text-xs text-slate-400 mt-3 line-clamp-2 leading-relaxed">
-              {p.description || "No project description provided."}
-            </p>
+            <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <span>{p.start_date || "Continuous"}</span>
+              </div>
+
+              {canWrite && (
+                <button
+                  onClick={() => onEdit(p)}
+                  className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-colors cursor-pointer"
+                  title="Edit Project & Assigned Departments"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">

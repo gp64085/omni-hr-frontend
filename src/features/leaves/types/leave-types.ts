@@ -20,6 +20,7 @@ export interface LeaveAllocation {
   used_days: number;
   pending_days: number;
   remaining_days: number;
+  scheduled_future_days?: number;
 }
 
 export interface LeaveRequestUser {
@@ -27,6 +28,18 @@ export interface LeaveRequestUser {
   first_name: string;
   last_name: string;
   email: string;
+}
+
+export interface LeaveDayItem {
+  date: string;
+  day_status: LeaveStatus;
+  total_days: number;
+  half_day_type?: string;
+  settled?: boolean;
+  paid_days?: number;
+  lwp_days?: number;
+  rejection_reason?: string | null;
+  timesheet_override?: boolean;
 }
 
 export interface LeaveRequest {
@@ -44,6 +57,15 @@ export interface LeaveRequest {
   status: LeaveStatus;
   approver_id?: string | null;
   approver_comments?: string | null;
+  extra_metadata?: {
+    paid_days?: number;
+    lwp_days?: number;
+    auto_lwp_applied?: boolean;
+    settled?: boolean;
+    settled_at?: string;
+    partial_decision?: boolean;
+    days?: LeaveDayItem[];
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +80,7 @@ export interface Holiday {
 }
 
 export interface LeaveRequestCreatePayload {
-  leave_type_id: string;
+  leave_type_id?: string;
   start_date: string;
   end_date: string;
   reason?: string;
@@ -68,7 +90,10 @@ export interface LeaveRequestCreatePayload {
 
 export interface LeaveStatusUpdatePayload {
   status: "approved" | "rejected";
-  approver_comments?: string;
+  comments?: string;
+  rejection_reason?: string;
+  approved_dates?: string[];
+  rejected_dates?: string[];
 }
 
 export interface LeavePolicy {

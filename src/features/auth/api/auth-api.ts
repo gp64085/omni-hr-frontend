@@ -12,9 +12,10 @@ export const authApi = {
     return res.data;
   },
 
-  getMe: async (token: string) => {
+  getMe: async (token?: string) => {
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const res = await apiClient.get<StandardApiResponse<UserProfile>>("/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
     });
     return res.data;
   },

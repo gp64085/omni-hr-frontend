@@ -34,3 +34,9 @@ export interface PermissionCreatePayload {
   module: string;
   description?: string;
 }
+
+export interface PermissionUpdatePayload {
+  code?: string;
+  module?: string;
+  description?: string;
+}

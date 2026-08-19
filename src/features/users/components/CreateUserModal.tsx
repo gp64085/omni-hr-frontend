@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { rolesApi } from "@/features/roles/api/roles-api";
 import { Role } from "@/features/roles/types/role-types";
@@ -54,12 +54,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, isLoading }: Create
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Add New Employee"
-      description="Create a workforce account with designated access role."
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Create Employee" maxWidth="xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Input
@@ -106,14 +101,11 @@ export function CreateUserModal({ isOpen, onClose, onSubmit, isLoading }: Create
           }))}
         />
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="gradient" isLoading={isLoading}>
-            Create Employee Account
-          </Button>
-        </div>
+        <ModalFooter
+          onCancel={onClose}
+          submitLabel="Create Employee Account"
+          isLoading={isLoading}
+        />
       </form>
     </Modal>
   );
