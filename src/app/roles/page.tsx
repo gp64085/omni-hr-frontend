@@ -1,107 +1,86 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { RolesListTable } from "@/features/roles/components/RolesListTable";
 import { CreateRoleModal } from "@/features/roles/components/CreateRoleModal";
+import { CreatePermissionModal } from "@/features/roles/components/CreatePermissionModal";
+import { EditPermissionModal } from "@/features/roles/components/EditPermissionModal";
 import { EditRoleModal } from "@/features/roles/components/EditRoleModal";
 import { PermissionsCatalog } from "@/features/roles/components/PermissionsCatalog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { ShieldCheck, Plus, Key } from "lucide-react";
-import { rolesApi } from "@/features/roles/api/roles-api";
-import { Role, RoleCreatePayload, RoleUpdatePayload } from "@/features/roles/types/role-types";
+import {
+  Permission,
+  PermissionUpdatePayload,
+  Role,
+  RoleCreatePayload,
+  RoleUpdatePayload,
+} from "@/features/roles/types/role-types";
 import { useAuthStore } from "@/store/use-auth-store";
-import { useToast } from "@/components/providers/ToastProvider";
-import { getApiErrorMessage } from "@/lib/error-utils";
 import { PAGINATION, PERMISSIONS } from "@/constants";
+import {
+  useRolesQuery,
+  useCreateRoleMutation,
+  useCreatePermissionMutation,
+  useUpdatePermissionMutation,
+  useUpdateRoleMutation,
+  useDeleteRoleMutation,
+} from "@/features/roles/hooks/use-roles-queries";
 
 export default function RolesPage() {
   const { hasPermission } = useAuthStore();
-  const { success, error } = useToast();
-
   const [activeTab, setActiveTab] = useState("roles");
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Modals
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [createRoleModalOpen, setCreateRoleModalOpen] = useState(false);
+  const [createPermModalOpen, setCreatePermModalOpen] = useState(false);
+  const [editRoleModalOpen, setEditRoleModalOpen] = useState(false);
+  const [editPermModalOpen, setEditPermModalOpen] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedPermission, setSelectedPermission] = useState<Permission | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchRoles = async () => {
-      try {
-        const res = await rolesApi.listRoles({ limit: PAGINATION.DEFAULT_LIMIT });
-        if (isMounted && res.data) {
-          setRoles(res.data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          error("Failed to load system roles", getApiErrorMessage(err));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+  // Queries
+  const { data: roles = [], isLoading } = useRolesQuery({ limit: PAGINATION.DEFAULT_LIMIT });
 
-    fetchRoles();
-    return () => {
-      isMounted = false;
-    };
-  }, [refreshTrigger, error]);
+  // Mutations
+  const createRoleMutation = useCreateRoleMutation();
+  const createPermMutation = useCreatePermissionMutation();
+  const updatePermMutation = useUpdatePermissionMutation();
+  const updateRoleMutation = useUpdateRoleMutation();
+  const deleteMutation = useDeleteRoleMutation();
 
   const handleCreateRole = async (payload: RoleCreatePayload) => {
-    setActionLoading(true);
-    try {
-      await rolesApi.createRole(payload);
-      success("Role Created", `Custom role '${payload.name}' has been created.`);
-      setCreateModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Failed to create role", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await createRoleMutation.mutateAsync(payload);
+    setCreateRoleModalOpen(false);
+  };
+
+  const handleCreatePermission = async (payload: {
+    code: string;
+    module: string;
+    description?: string;
+  }) => {
+    await createPermMutation.mutateAsync(payload);
+    setCreatePermModalOpen(false);
+  };
+
+  const handleUpdatePermission = async (id: string, payload: PermissionUpdatePayload) => {
+    await updatePermMutation.mutateAsync({ id, payload });
+    setEditPermModalOpen(false);
   };
 
   const handleUpdateRole = async (id: string, payload: RoleUpdatePayload) => {
-    setActionLoading(true);
-    try {
-      await rolesApi.updateRole(id, payload);
-      success("Role Updated", "Role permissions and configuration updated.");
-      setEditModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Failed to update role", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await updateRoleMutation.mutateAsync({ id, payload });
+    setEditRoleModalOpen(false);
   };
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setActionLoading(true);
-    try {
-      await rolesApi.deleteRole(deleteTarget.id);
-      success("Role Deleted", `Custom role '${deleteTarget.name}' was removed.`);
-      setDeleteTarget(null);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Delete Failed", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await deleteMutation.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const canWrite = hasPermission(PERMISSIONS.ROLES_WRITE);
@@ -116,16 +95,28 @@ export default function RolesPage() {
       title="Roles & Access Control (RBAC)"
       subtitle="Configure enterprise security roles and granular permission policies"
       actions={
-        canWrite &&
-        activeTab === "roles" && (
-          <Button
-            variant="gradient"
-            onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Custom Role</span>
-          </Button>
+        canWrite && (
+          <div>
+            {activeTab === "roles" ? (
+              <Button
+                variant="gradient"
+                onClick={() => setCreateRoleModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Custom Role</span>
+              </Button>
+            ) : (
+              <Button
+                variant="gradient"
+                onClick={() => setCreatePermModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Permission</span>
+              </Button>
+            )}
+          </div>
         )
       }
     >
@@ -138,27 +129,48 @@ export default function RolesPage() {
             isLoading={isLoading}
             onEdit={(r) => {
               setSelectedRole(r);
-              setEditModalOpen(true);
+              setEditRoleModalOpen(true);
             }}
             onDelete={(r) => setDeleteTarget(r)}
           />
         ) : (
-          <PermissionsCatalog />
+          <PermissionsCatalog
+            onOpenCreateModal={() => setCreatePermModalOpen(true)}
+            onEditPermission={(p) => {
+              setSelectedPermission(p);
+              setEditPermModalOpen(true);
+            }}
+          />
         )}
 
         <CreateRoleModal
-          isOpen={createModalOpen}
-          onClose={() => setCreateModalOpen(false)}
+          isOpen={createRoleModalOpen}
+          onClose={() => setCreateRoleModalOpen(false)}
           onSubmit={handleCreateRole}
-          isLoading={actionLoading}
+          isLoading={createRoleMutation.isPending}
+        />
+
+        <CreatePermissionModal
+          isOpen={createPermModalOpen}
+          onClose={() => setCreatePermModalOpen(false)}
+          onSubmit={handleCreatePermission}
+          isLoading={createPermMutation.isPending}
+        />
+
+        <EditPermissionModal
+          isOpen={editPermModalOpen}
+          onClose={() => setEditPermModalOpen(false)}
+          permission={selectedPermission}
+          onSubmit={handleUpdatePermission}
+          isLoading={updatePermMutation.isPending}
         />
 
         <EditRoleModal
-          isOpen={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
+          isOpen={editRoleModalOpen}
+          onClose={() => setEditRoleModalOpen(false)}
           role={selectedRole}
           onSubmit={handleUpdateRole}
-          isLoading={actionLoading}
+          isLoading={updateRoleMutation.isPending}
         />
 
         <ConfirmDialog
@@ -169,7 +181,7 @@ export default function RolesPage() {
           description={`Are you sure you want to permanently delete custom role '${deleteTarget?.name}'? Users assigned to this role must be reassigned.`}
           confirmText="Delete Role"
           variant="danger"
-          isLoading={actionLoading}
+          isLoading={deleteMutation.isPending}
         />
       </div>
     </AppShell>

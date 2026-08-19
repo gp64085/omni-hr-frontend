@@ -1,90 +1,47 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProjectsGrid } from "@/features/projects/components/ProjectsGrid";
 import { CreateProjectModal } from "@/features/projects/components/CreateProjectModal";
 import { EditProjectModal } from "@/features/projects/components/EditProjectModal";
 import { Button } from "@/components/ui/Button";
 import { FolderPlus } from "lucide-react";
-import { projectsApi } from "@/features/projects/api/projects-api";
 import {
   Project,
   ProjectCreatePayload,
   ProjectUpdatePayload,
 } from "@/features/projects/types/project-types";
 import { useAuthStore } from "@/store/use-auth-store";
-import { useToast } from "@/components/providers/ToastProvider";
-import { getApiErrorMessage } from "@/lib/error-utils";
 import { PERMISSIONS } from "@/constants";
+import {
+  useProjectsQuery,
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+} from "@/features/projects/hooks/use-projects-queries";
 
 export default function ProjectsPage() {
   const { hasPermission } = useAuthStore();
-  const { success, error } = useToast();
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchProjects = async () => {
-      try {
-        const res = await projectsApi.listProjects();
-        if (isMounted && res.data) {
-          setProjects(res.data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          error("Failed to load projects", getApiErrorMessage(err));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+  // Queries
+  const { data: projects = [], isLoading } = useProjectsQuery();
 
-    fetchProjects();
-    return () => {
-      isMounted = false;
-    };
-  }, [refreshTrigger, error]);
+  // Mutations
+  const createMutation = useCreateProjectMutation();
+  const updateMutation = useUpdateProjectMutation();
 
   const handleCreateProject = async (payload: ProjectCreatePayload) => {
-    setActionLoading(true);
-    try {
-      await projectsApi.createProject(payload);
-      success("Project Created", `Project '${payload.name}' has been created.`);
-      setCreateModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Failed to create project", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await createMutation.mutateAsync(payload);
+    setCreateModalOpen(false);
   };
 
   const handleUpdateProject = async (id: string, payload: ProjectUpdatePayload) => {
-    setActionLoading(true);
-    try {
-      await projectsApi.updateProject(id, payload);
-      success("Project Updated", "Project configuration has been saved.");
-      setEditModalOpen(false);
-      setIsLoading(true);
-      setRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      error("Failed to update project", getApiErrorMessage(err));
-    } finally {
-      setActionLoading(false);
-    }
+    await updateMutation.mutateAsync({ id, payload });
+    setEditModalOpen(false);
   };
 
   const canWrite = hasPermission(PERMISSIONS.PROJECTS_WRITE);
@@ -120,7 +77,7 @@ export default function ProjectsPage() {
           isOpen={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
           onSubmit={handleCreateProject}
-          isLoading={actionLoading}
+          isLoading={createMutation.isPending}
         />
 
         <EditProjectModal
@@ -128,7 +85,7 @@ export default function ProjectsPage() {
           onClose={() => setEditModalOpen(false)}
           project={selectedProject}
           onSubmit={handleUpdateProject}
-          isLoading={actionLoading}
+          isLoading={updateMutation.isPending}
         />
       </div>
     </AppShell>

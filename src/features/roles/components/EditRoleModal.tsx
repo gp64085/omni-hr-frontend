@@ -17,17 +17,7 @@ export function EditRoleModal({ isOpen, onClose, role, onSubmit, isLoading }: Ed
   if (!role) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Edit Role: ${role.name}`}
-      description={
-        role.is_system
-          ? "System roles have predefined boundaries; permission updates apply immediately."
-          : "Modify custom role parameters and assigned permissions."
-      }
-      maxWidth="2xl"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={`Edit Role: ${role.name}`} maxWidth="2xl">
       <EditRoleForm
         key={role.id}
         role={role}

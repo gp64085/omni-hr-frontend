@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   Users,
@@ -14,101 +14,16 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useAuthStore } from "@/store/use-auth-store";
-import { usersApi } from "@/features/users/api/users-api";
-import { leavesApi, holidaysApi } from "@/features/leaves/api/leaves-api";
-import { timesheetsApi } from "@/features/timesheets/api/timesheets-api";
-import { LeaveAllocation, Holiday } from "@/features/leaves/types/leave-types";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { PERMISSIONS, ROUTES, LEAVE_STATUS, ROLES } from "@/constants";
-import { getWeekDates, getTodayDateString } from "@/lib/date-utils";
+import { PERMISSIONS, ROUTES, ROLES } from "@/constants";
 import { DashboardCalendar } from "./DashboardCalendar";
+import { useDashboardSummaryQuery } from "../hooks/use-dashboard-queries";
 
 export function DashboardView() {
   const { user, hasPermission } = useAuthStore();
-  const [employeeCount, setEmployeeCount] = useState<number | null>(null);
-  const [leaveBalances, setLeaveBalances] = useState<LeaveAllocation[]>([]);
-  const [upcomingHolidays, setUpcomingHolidays] = useState<Holiday[]>([]);
-  const [weeklyHours, setWeeklyHours] = useState<number>(0);
-  const [pendingApprovalsCount, setPendingApprovalsCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useDashboardSummaryQuery();
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchDashboardData = async () => {
-      try {
-        if (hasPermission(PERMISSIONS.USERS_READ)) {
-          try {
-            const usersRes = await usersApi.listUsers({ limit: 1 });
-            if (isMounted && usersRes.meta?.total !== undefined) {
-              setEmployeeCount(usersRes.meta.total);
-            }
-          } catch {
-            // ignore
-          }
-        }
-
-        try {
-          const balancesRes = await leavesApi.getLeaveBalance();
-          if (isMounted && balancesRes.data) {
-            setLeaveBalances(balancesRes.data);
-          }
-        } catch {
-          // ignore
-        }
-
-        try {
-          const holidaysRes = await holidaysApi.listHolidays();
-          if (isMounted && holidaysRes.data) {
-            const todayStr = getTodayDateString();
-            const upcoming = holidaysRes.data.filter((h) => h.holiday_date >= todayStr).slice(0, 4);
-            setUpcomingHolidays(upcoming);
-          }
-        } catch {
-          // ignore
-        }
-
-        try {
-          const { startDate, endDate } = getWeekDates(0);
-          const timesheetRes = await timesheetsApi.getWeeklySummary({
-            start_date: startDate,
-            end_date: endDate,
-          });
-          if (isMounted && timesheetRes.data) {
-            setWeeklyHours(timesheetRes.data.total_hours || 0);
-          }
-        } catch {
-          // ignore
-        }
-
-        if (hasPermission(PERMISSIONS.LEAVE_APPROVE)) {
-          try {
-            const pendingLeaves = await leavesApi.listLeaveRequests({
-              status: LEAVE_STATUS.PENDING,
-              limit: 5,
-            });
-            if (isMounted && pendingLeaves.meta?.total !== undefined) {
-              setPendingApprovalsCount(pendingLeaves.meta.total);
-            }
-          } catch {
-            // ignore
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchDashboardData();
-    return () => {
-      isMounted = false;
-    };
-  }, [hasPermission]);
-
-  const totalRemainingLeaves = leaveBalances.reduce(
+  const totalRemainingLeaves = (data?.balances || []).reduce(
     (acc, curr) => acc + (curr.remaining_days || 0),
     0
   );
@@ -125,7 +40,7 @@ export function DashboardView() {
               <span>OmniHR Workspace Active</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Welcome back, {user?.first_name}!
+              Welcome back, {user?.first_name || "Team Member"}!
             </h2>
             <p className="text-sm text-slate-400 max-w-xl">
               {user?.designation?.title || "Team Member"} • {user?.department?.name || "Corporate"}{" "}
@@ -166,10 +81,14 @@ export function DashboardView() {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-white">
-              {isLoading ? "..." : employeeCount !== null ? employeeCount : "Active"}
+              {isLoading
+                ? "..."
+                : data?.totalEmployees !== null && data?.totalEmployees !== undefined
+                  ? data.totalEmployees
+                  : "Active"}
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              {employeeCount !== null
+              {data?.totalEmployees !== null && data?.totalEmployees !== undefined
                 ? "Registered personnel"
                 : user?.department?.name || "Corporate"}
             </p>
@@ -200,7 +119,7 @@ export function DashboardView() {
           </div>
           <div className="mt-3">
             <div className="text-2xl font-bold text-white">
-              {isLoading ? "..." : `${weeklyHours.toFixed(1)} hrs`}
+              {isLoading ? "..." : `${(data?.weeklyHours || 0).toFixed(1)} hrs`}
             </div>
             <p className="text-[11px] text-slate-400 mt-1">Current work week</p>
           </div>
@@ -224,7 +143,7 @@ export function DashboardView() {
               {isLoading
                 ? "..."
                 : hasPermission(PERMISSIONS.LEAVE_APPROVE)
-                  ? pendingApprovalsCount
+                  ? data?.pendingApprovalsCount || 0
                   : "RBAC Active"}
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
@@ -261,14 +180,14 @@ export function DashboardView() {
               </Link>
             </div>
 
-            {leaveBalances.length === 0 && !isLoading && (
+            {(!data?.balances || data.balances.length === 0) && !isLoading && (
               <div className="text-xs text-slate-500 text-center py-6">
                 No leave allocations recorded for this year.
               </div>
             )}
 
             <div className="space-y-4">
-              {leaveBalances.map((allocation) => {
+              {(data?.balances || []).map((allocation) => {
                 const total = allocation.allocated_days || 1;
                 const used = allocation.used_days || 0;
                 const remaining = allocation.remaining_days || 0;
@@ -366,13 +285,13 @@ export function DashboardView() {
               <CalendarDays className="w-5 h-5 text-indigo-400" />
             </div>
 
-            {upcomingHolidays.length === 0 ? (
+            {(!data?.upcomingHolidays || data.upcomingHolidays.length === 0) && !isLoading ? (
               <div className="text-xs text-slate-500 text-center py-6">
                 No upcoming holidays scheduled.
               </div>
             ) : (
               <div className="space-y-2.5">
-                {upcomingHolidays.map((holiday) => (
+                {(data?.upcomingHolidays || []).map((holiday) => (
                   <div
                     key={holiday.id}
                     className="p-3 rounded-xl bg-slate-800/30 border border-slate-800 flex items-center justify-between"

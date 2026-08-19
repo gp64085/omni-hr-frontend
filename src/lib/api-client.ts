@@ -1,5 +1,6 @@
 import axios from "axios";
 import { STORAGE_KEYS, ROUTES } from "@/constants";
+import { useAuthStore } from "@/store/use-auth-store";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -12,11 +13,12 @@ export const apiClient = axios.create({
 
 // Interceptor to attach Bearer token
 apiClient.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token =
+    useAuthStore.getState().accessToken ||
+    (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) : null);
+
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -35,7 +37,9 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       const refreshToken =
-        typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) : null;
+        useAuthStore.getState().refreshToken ||
+        (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) : null);
+
       if (refreshToken) {
         try {
           const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
@@ -43,24 +47,24 @@ apiClient.interceptors.response.use(
           });
           if (res.data?.data?.access_token) {
             const newToken = res.data.data.access_token;
-            localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newToken);
-            if (res.data.data.refresh_token) {
-              localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, res.data.data.refresh_token);
+            const newRefreshToken = res.data.data.refresh_token || refreshToken;
+            const currentUser = useAuthStore.getState().user;
+
+            if (currentUser) {
+              useAuthStore.getState().setAuth(currentUser, newToken, newRefreshToken);
             }
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return apiClient(originalRequest);
           }
         } catch {
+          useAuthStore.getState().logout();
           if (typeof window !== "undefined") {
-            localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
             window.location.href = ROUTES.LOGIN;
           }
         }
       } else {
+        useAuthStore.getState().logout();
         if (typeof window !== "undefined") {
-          localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
           window.location.href = ROUTES.LOGIN;
         }
       }

@@ -1,8 +1,27 @@
 export type TimesheetStatus = "draft" | "submitted" | "approved" | "rejected";
 
+export interface TimesheetTaskDetail {
+  summary: string;
+  hours: number;
+  minutes?: number;
+  formatted_time?: string;
+}
+
+export interface TimesheetProjectAllocation {
+  project_id?: string | null;
+  project_name?: string | null;
+  is_billable?: boolean;
+  tasks: TimesheetTaskDetail[];
+  total_hours?: number;
+}
+
+export type ActivitySummaryType =
+  string | TimesheetProjectAllocation[] | TimesheetTaskDetail[] | Record<string, unknown>[];
+
 export interface TimesheetEntry {
   id: string;
   user_id: string;
+  user_name?: string | null;
   project_id?: string | null;
   project_name?: string | null;
   project?: {
@@ -12,7 +31,7 @@ export interface TimesheetEntry {
   } | null;
   work_date: string;
   hours_spent: number;
-  activity_summary: string;
+  activity_summary: ActivitySummaryType;
   is_billable: boolean;
   status: TimesheetStatus;
   approver_id?: string | null;
@@ -34,8 +53,8 @@ export interface WeeklyTimesheetSummary {
 export interface TimesheetEntryCreatePayload {
   project_id?: string | null;
   work_date: string;
-  hours_spent: number;
-  activity_summary: string;
+  hours_spent?: number;
+  activity_summary: ActivitySummaryType;
   is_billable?: boolean;
 }
 
@@ -43,7 +62,7 @@ export interface TimesheetEntryUpdatePayload {
   project_id?: string | null;
   work_date?: string;
   hours_spent?: number;
-  activity_summary?: string;
+  activity_summary?: ActivitySummaryType;
   is_billable?: boolean;
 }
 

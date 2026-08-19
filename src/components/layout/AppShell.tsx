@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,19 +15,20 @@ import {
   LogOut,
   Menu,
   X,
-  Cpu,
   ChevronRight,
+  Cpu,
 } from "lucide-react";
-import clsx from "clsx";
 import { useAuthStore } from "@/store/use-auth-store";
-import { authApi } from "@/features/auth/api/auth-api";
-import { ROUTES, PERMISSIONS, STORAGE_KEYS, ROLES, PermissionCode } from "@/constants";
+import { ROUTES, PERMISSIONS, PermissionCode, ROLES } from "@/constants";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { useCurrentUserQuery, useLogoutMutation } from "@/features/auth/hooks/use-auth-queries";
+import clsx from "clsx";
 
 interface AppShellProps {
-  children: React.ReactNode;
-  title?: string;
+  children: ReactNode;
+  title: string;
   subtitle?: string;
-  actions?: React.ReactNode;
+  actions?: ReactNode;
 }
 
 interface NavItem {
@@ -41,53 +42,18 @@ interface NavItem {
 export function AppShell({ children, title, subtitle, actions }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, accessToken, logout, hasPermission, setAuth } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isHydrating, setIsHydrating] = useState(true);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      const storedRefresh = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || "";
+  const { user, hasPermission } = useAuthStore();
+  const logoutMutation = useLogoutMutation();
 
-      if (!storedToken) {
-        router.push(ROUTES.LOGIN);
-        return;
-      }
+  // Background profile synchronization
+  useCurrentUserQuery();
 
-      if (!user && storedToken) {
-        try {
-          const res = await authApi.getMe(storedToken);
-          if (res.data) {
-            setAuth(res.data, storedToken, storedRefresh);
-          }
-        } catch {
-          logout();
-          router.push(ROUTES.LOGIN);
-        }
-      }
-      setIsHydrating(false);
-    };
-
-    initAuth();
-  }, [user, router, setAuth, logout]);
-
-  if (isHydrating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A0D14] text-slate-300">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-          <span className="text-sm font-medium text-slate-400">
-            Authenticating OmniHR workspace...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user && !accessToken) {
-    return null;
-  }
+  const handleLogout = async () => {
+    await logoutMutation.mutateAsync();
+    router.push(ROUTES.LOGIN);
+  };
 
   const navItems: NavItem[] = [
     {
@@ -145,20 +111,6 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
     return false;
   });
 
-  const handleLogout = async () => {
-    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || "";
-    try {
-      if (refreshToken) {
-        await authApi.logout(refreshToken);
-      }
-    } catch {
-      // ignore
-    } finally {
-      logout();
-      router.push(ROUTES.LOGIN);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#0A0D14] flex">
       {/* Desktop Sidebar */}
@@ -214,12 +166,11 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
         <div className="p-4 border-t border-slate-800/80 bg-slate-950/80">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white uppercase shadow">
-              {user?.first_name?.[0] || "U"}
-              {user?.last_name?.[0] || ""}
+              {user?.first_name ? `${user.first_name[0]}${user.last_name?.[0] || ""}` : "U"}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-white truncate">
-                {user?.first_name} {user?.last_name}
+                {user ? `${user.first_name} ${user.last_name}` : "Workspace Member"}
               </div>
               <div className="text-[10px] text-indigo-400 capitalize truncate">
                 {user?.role?.name ? user.role.name.replace("_", " ") : ROLES.EMPLOYEE}
@@ -229,10 +180,11 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
 
           <button
             onClick={handleLogout}
-            className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+            disabled={logoutMutation.isPending}
+            className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer disabled:opacity-50"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
+            <span>{logoutMutation.isPending ? "Signing out..." : "Sign Out"}</span>
           </button>
         </div>
       </aside>
@@ -289,48 +241,58 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
             <div className="p-4 border-t border-slate-800">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20"
+                disabled={logoutMutation.isPending}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 disabled:opacity-50"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
+                <span>{logoutMutation.isPending ? "Signing out..." : "Sign Out"}</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Area */}
+      {/* Main Layout Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-18 border-b border-slate-800/80 bg-slate-950/40 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-4">
+        {/* Top Navbar */}
+        <header className="h-18 border-b border-slate-800/80 bg-[#0A0D14]/80 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+              className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800"
             >
               <Menu className="w-5 h-5" />
             </button>
-
             <div>
-              <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                {title || "Dashboard"}
-              </h1>
-              {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+              <h1 className="text-lg font-bold text-white tracking-tight">{title}</h1>
+              {subtitle && <p className="text-xs text-slate-400 hidden sm:block">{subtitle}</p>}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {actions}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <NotificationBell />
 
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-slate-300 font-medium capitalize">
-                {user?.role?.name ? user.role.name.replace("_", " ") : ROLES.EMPLOYEE}
-              </span>
+            <div className="hidden sm:flex items-center gap-3 pl-3 border-l border-slate-800">
+              <div className="text-right">
+                <div className="text-xs font-semibold text-white">
+                  {user ? `${user.first_name} ${user.last_name}` : "Workspace Member"}
+                </div>
+                <div className="text-[10px] text-indigo-400 capitalize">
+                  {user?.department?.name ? user.department.name : "OmniHR"}
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow">
+                {user?.first_name ? user.first_name[0] : "U"}
+              </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">{children}</main>
+        {/* Page Main Content Area */}
+        <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
+          {actions && <div className="flex items-center justify-end gap-3">{actions}</div>}
+          {children}
+        </main>
       </div>
     </div>
   );

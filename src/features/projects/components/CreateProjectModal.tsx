@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { ProjectCreatePayload, ProjectStatus } from "../types/project-types";
@@ -44,12 +44,7 @@ export function CreateProjectModal({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Create New Project"
-      description="Initialize a corporate project for work logging and timesheet allocation."
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Create Project" maxWidth="xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Input
@@ -111,14 +106,7 @@ export function CreateProjectModal({
           ]}
         />
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="gradient" isLoading={isLoading}>
-            Create Project
-          </Button>
-        </div>
+        <ModalFooter onCancel={onClose} submitLabel="Create Project" isLoading={isLoading} />
       </form>
     </Modal>
   );

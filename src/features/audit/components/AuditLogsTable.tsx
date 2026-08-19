@@ -53,7 +53,7 @@ export function AuditLogsTable({ logs, isLoading, onInspect }: AuditLogsTablePro
       cell: (l) => (
         <button
           onClick={() => onInspect(l)}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5" />
           <span>Inspect</span>

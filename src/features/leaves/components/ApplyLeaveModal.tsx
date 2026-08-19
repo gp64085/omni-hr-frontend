@@ -3,11 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { leavesApi } from "../api/leaves-api";
-import { LeaveType, LeaveRequestCreatePayload } from "../types/leave-types";
-import { Info } from "lucide-react";
+import { LeaveAllocation, LeaveRequestCreatePayload } from "../types/leave-types";
 import { getTodayDateString } from "@/lib/date-utils";
 import { HALF_DAY_SESSIONS } from "@/constants";
 
@@ -16,40 +14,49 @@ interface ApplyLeaveModalProps {
   onClose: () => void;
   onSubmit: (payload: LeaveRequestCreatePayload) => Promise<void>;
   isLoading: boolean;
+  defaultStartDate?: string;
+  defaultEndDate?: string;
 }
 
-export function ApplyLeaveModal({ isOpen, onClose, onSubmit, isLoading }: ApplyLeaveModalProps) {
-  const [leaveTypeId, setLeaveTypeId] = useState("");
-  const [startDate, setStartDate] = useState(getTodayDateString);
-  const [endDate, setEndDate] = useState(getTodayDateString);
+export function ApplyLeaveModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isLoading,
+  defaultStartDate,
+  defaultEndDate,
+}: ApplyLeaveModalProps) {
+  const [startDate, setStartDate] = useState(defaultStartDate || getTodayDateString);
+  const [endDate, setEndDate] = useState(defaultEndDate || defaultStartDate || getTodayDateString);
   const [reason, setReason] = useState("");
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [halfDaySession, setHalfDaySession] = useState<"first_half" | "second_half">(
     HALF_DAY_SESSIONS.FIRST_HALF
   );
-  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [balances, setBalances] = useState<LeaveAllocation[]>([]);
 
   useEffect(() => {
     let isMounted = true;
     if (isOpen) {
-      leavesApi.getLeaveTypes().then((res) => {
+      leavesApi.getLeaveBalance(new Date().getFullYear()).then((res) => {
         if (isMounted && res.data) {
-          setLeaveTypes(res.data);
-          if (res.data.length > 0 && !leaveTypeId) {
-            setLeaveTypeId(res.data[0].id);
-          }
+          setBalances(res.data);
         }
       });
     }
     return () => {
       isMounted = false;
     };
-  }, [isOpen, leaveTypeId]);
+  }, [isOpen]);
+
+  const totalAvailableQuota = balances.reduce(
+    (acc, b) => acc + Math.max(0, b.remaining_days - (b.scheduled_future_days || 0)),
+    0
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit({
-      leave_type_id: leaveTypeId,
       start_date: startDate,
       end_date: isHalfDay ? startDate : endDate,
       reason: reason || undefined,
@@ -61,23 +68,8 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit, isLoading }: ApplyL
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Apply for Leave"
-      description="Submit a leave request. Non-working days and official holidays are automatically excluded."
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Apply Leave">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Select
-          label="Leave Type"
-          value={leaveTypeId}
-          onChange={(e) => setLeaveTypeId(e.target.value)}
-          options={leaveTypes.map((t) => ({
-            value: t.id,
-            label: `${t.name.toUpperCase()} (Quota: ${t.default_quota}d, Auto-approve: ${t.auto_approve_threshold > 0 ? "Yes" : "No"})`,
-          }))}
-        />
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <DatePicker
             label="Start Date"
@@ -155,12 +147,12 @@ export function ApplyLeaveModal({ isOpen, onClose, onSubmit, isLoading }: ApplyL
           />
         </div>
 
-        <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs flex items-start gap-2">
-          <Info className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>
-            Working day calculations automatically exclude weekends and official company holidays.
-          </span>
-        </div>
+        {balances.length > 0 && (
+          <div className="px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs flex items-center justify-between">
+            <span className="text-slate-400">Total Available Leave Balance</span>
+            <span className="font-semibold text-white">{totalAvailableQuota.toFixed(1)} days</span>
+          </div>
+        )}
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>

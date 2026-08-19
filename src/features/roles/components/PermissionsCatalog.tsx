@@ -1,76 +1,64 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { rolesApi } from "../api/roles-api";
-import { Permission } from "../types/role-types";
+import React, { useState } from "react";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { Key } from "lucide-react";
-import { PAGINATION, SYSTEM_MODULES } from "@/constants";
+import { Button } from "@/components/ui/Button";
+import { Key, Plus, Pencil } from "lucide-react";
+import { SYSTEM_MODULES, PAGINATION, PERMISSIONS } from "@/constants";
+import { useAuthStore } from "@/store/use-auth-store";
+import { usePermissionsQuery } from "../hooks/use-roles-queries";
+import { Permission } from "../types/role-types";
 
-export function PermissionsCatalog() {
-  const [permissions, setPermissions] = useState<Permission[]>([]);
+interface PermissionsCatalogProps {
+  onOpenCreateModal?: () => void;
+  onEditPermission?: (permission: Permission) => void;
+}
+
+export function PermissionsCatalog({
+  onOpenCreateModal,
+  onEditPermission,
+}: PermissionsCatalogProps) {
+  const { hasPermission } = useAuthStore();
   const [search, setSearch] = useState("");
   const [selectedModule, setSelectedModule] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      try {
-        const res = await rolesApi.listPermissions({
-          limit: PAGINATION.MAX_LIMIT,
-          search: search || undefined,
-          module: selectedModule !== "all" ? selectedModule : undefined,
-        });
-        if (isMounted && res.data) {
-          setPermissions(res.data);
-        }
-      } catch (err) {
-        console.error("Failed to load permissions catalog", err);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+  const canWrite = hasPermission(PERMISSIONS.ROLES_WRITE);
 
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [search, selectedModule]);
+  const { data: permissions = [], isLoading } = usePermissionsQuery({
+    limit: PAGINATION.MAX_LIMIT,
+    search: search || undefined,
+    module: selectedModule !== "all" ? selectedModule : undefined,
+  });
 
   return (
     <div className="space-y-4">
       {/* Search & Module filter bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
         <SearchInput
           value={search}
-          onChange={(val) => {
-            setSearch(val);
-            setIsLoading(true);
-          }}
+          onChange={(val) => setSearch(val)}
           placeholder="Search by code or description..."
-          className="w-full sm:w-72"
+          className="w-full lg:w-80 shrink-0"
         />
 
-        <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {SYSTEM_MODULES.map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                setSelectedModule(m);
-                setIsLoading(true);
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                selectedModule === m
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+        {/* Module Chips Filter */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {SYSTEM_MODULES.map((m) => {
+            const isSelected = selectedModule === m;
+            return (
+              <button
+                key={m}
+                onClick={() => setSelectedModule(m)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/30"
+                    : "text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-750/50"
+                }`}
+              >
+                {m}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -80,27 +68,56 @@ export function PermissionsCatalog() {
           <p className="text-xs text-slate-400">Loading catalog...</p>
         </div>
       ) : permissions.length === 0 ? (
-        <div className="p-8 text-center bg-slate-900/60 border border-slate-800 rounded-2xl text-xs text-slate-400">
-          No system permissions found.
+        <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-400 mx-auto">
+            <Key className="w-6 h-6" />
+          </div>
+          <div className="text-sm font-semibold text-white">No Permissions Found</div>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            {search || selectedModule !== "all"
+              ? "No permissions matched your search criteria."
+              : "Register your first custom permission to use across security policies."}
+          </p>
+          {canWrite && onOpenCreateModal && (
+            <Button variant="secondary" size="sm" onClick={onOpenCreateModal} className="mt-2">
+              <Plus className="w-4 h-4 mr-1.5" />
+              <span>Create New Permission</span>
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {permissions.map((p) => (
             <div
               key={p.id}
-              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all flex items-start gap-3"
+              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all flex items-start gap-3 group"
             >
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 group-hover:scale-105 transition-transform">
                 <Key className="w-4 h-4" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white font-mono">{p.code}</span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 uppercase">
-                    {p.module}
-                  </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-white font-mono truncate">{p.code}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400 uppercase">
+                      {p.module}
+                    </span>
+                    {canWrite && onEditPermission && (
+                      <button
+                        type="button"
+                        onClick={() => onEditPermission(p)}
+                        className="p-1 rounded-md text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors cursor-pointer"
+                        title={`Edit permission ${p.code}`}
+                        aria-label={`Edit permission ${p.code}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">{p.description}</p>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                  {p.description || "No description provided."}
+                </p>
               </div>
             </div>
           ))}
