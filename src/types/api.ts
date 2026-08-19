@@ -10,14 +10,14 @@ export interface PaginationMeta {
   total: number;
 }
 
-export interface StandardApiResponse<T> {
+export interface ApiResponse<T> {
   success: boolean;
   data: T;
   meta?: PaginationMeta;
   error?: ApiError | null;
 }
 
-export interface BaseQueryParams {
+export interface BaseQueryParams extends Record<string, unknown> {
   page?: number;
   limit?: number;
   search?: string;

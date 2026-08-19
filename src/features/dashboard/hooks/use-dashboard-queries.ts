@@ -39,7 +39,8 @@ export function useDashboardSummaryQuery() {
 
       const totalEmployees = usersRes?.meta?.total ?? null;
       const balances = balancesRes?.data || [];
-      const weeklyHours = timesheetRes?.data?.total_hours || 0;
+      const weeklyMinutes = timesheetRes?.data?.total_minutes_spent || 0;
+      const weeklyHours = weeklyMinutes / 60;
       const pendingApprovalsCount = pendingLeavesRes?.meta?.total || 0;
 
       return {

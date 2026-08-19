@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Input } from "@/components/ui/Input";
-import { rolesApi } from "../api/roles-api";
+import { permissionsApi } from "../api/permissions-api";
 import { Permission, RoleCreatePayload } from "../types/role-types";
 import { CheckSquare, Square } from "lucide-react";
 
@@ -23,7 +23,7 @@ export function CreateRoleModal({ isOpen, onClose, onSubmit, isLoading }: Create
 
   useEffect(() => {
     if (isOpen) {
-      rolesApi.listPermissions({ limit: 100 }).then((res) => {
+      permissionsApi.listPermissions({ limit: 100 }).then((res) => {
         if (res.data) {
           setPermissions(res.data);
         }

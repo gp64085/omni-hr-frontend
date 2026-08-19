@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { rolesApi } from "../api/roles-api";
-import { RoleCreatePayload, RoleUpdatePayload } from "../types/role-types";
+import { permissionsApi, PermissionListParams } from "../api/permissions-api";
+import {
+  PermissionCreatePayload,
+  PermissionUpdatePayload,
+  RoleCreatePayload,
+  RoleUpdatePayload,
+} from "../types/role-types";
 import { queryKeys } from "@/lib/query-keys";
 import { useAppMutation } from "@/lib/mutation-utils";
 
@@ -15,16 +21,11 @@ export function useRolesQuery(params?: { page?: number; limit?: number }) {
   });
 }
 
-export function usePermissionsQuery(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  module?: string;
-}) {
+export function usePermissionsQuery(params?: PermissionListParams) {
   return useQuery({
-    queryKey: queryKeys.roles.permissions(params),
+    queryKey: queryKeys.permissions.list(params),
     queryFn: async () => {
-      const res = await rolesApi.listPermissions(params);
+      const res = await permissionsApi.listPermissions(params);
       return res.data || [];
     },
     staleTime: 5 * 60 * 1000,
@@ -33,9 +34,8 @@ export function usePermissionsQuery(params?: {
 
 export function useCreatePermissionMutation() {
   return useAppMutation({
-    mutationFn: (payload: { code: string; module: string; description?: string }) =>
-      rolesApi.createPermission(payload),
-    invalidateKeys: [queryKeys.roles.all],
+    mutationFn: (payload: PermissionCreatePayload) => permissionsApi.createPermission(payload),
+    invalidateKeys: [queryKeys.permissions.all, queryKeys.roles.all],
     successMessage: (_, vars) => ({
       title: "Permission Created",
       message: `Permission '${vars.code}' has been registered in the catalog.`,
@@ -45,14 +45,9 @@ export function useCreatePermissionMutation() {
 
 export function useUpdatePermissionMutation() {
   return useAppMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: { code?: string; module?: string; description?: string };
-    }) => rolesApi.updatePermission(id, payload),
-    invalidateKeys: [queryKeys.roles.all],
+    mutationFn: ({ id, payload }: { id: string; payload: PermissionUpdatePayload }) =>
+      permissionsApi.updatePermission(id, payload),
+    invalidateKeys: [queryKeys.permissions.all, queryKeys.roles.all],
     successMessage: "Permission has been updated successfully.",
   });
 }

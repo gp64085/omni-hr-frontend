@@ -10,13 +10,11 @@ export interface TimesheetTaskDetail {
 export interface TimesheetProjectAllocation {
   project_id?: string | null;
   project_name?: string | null;
-  is_billable?: boolean;
   tasks: TimesheetTaskDetail[];
-  total_hours?: number;
+  total_minutes_spent: number;
 }
 
-export type ActivitySummaryType =
-  string | TimesheetProjectAllocation[] | TimesheetTaskDetail[] | Record<string, unknown>[];
+export type ActivitySummaryType = TimesheetProjectAllocation[] | Record<string, unknown>[];
 
 export interface TimesheetEntry {
   id: string;
@@ -30,9 +28,9 @@ export interface TimesheetEntry {
     code?: string;
   } | null;
   work_date: string;
-  hours_spent: number;
+  total_minutes_spent: number;
   activity_summary: ActivitySummaryType;
-  is_billable: boolean;
+  is_billable?: boolean;
   status: TimesheetStatus;
   approver_id?: string | null;
   rejection_reason?: string | null;
@@ -43,9 +41,7 @@ export interface TimesheetEntry {
 export interface WeeklyTimesheetSummary {
   start_date: string;
   end_date: string;
-  total_hours: number;
-  billable_hours: number;
-  non_billable_hours: number;
+  total_minutes_spent: number;
   entries_count: number;
   status_breakdown?: Record<string, number>;
 }
@@ -53,17 +49,15 @@ export interface WeeklyTimesheetSummary {
 export interface TimesheetEntryCreatePayload {
   project_id?: string | null;
   work_date: string;
-  hours_spent?: number;
+  total_minutes_spent: number;
   activity_summary: ActivitySummaryType;
-  is_billable?: boolean;
 }
 
 export interface TimesheetEntryUpdatePayload {
   project_id?: string | null;
   work_date?: string;
-  hours_spent?: number;
+  total_minutes_spent?: number;
   activity_summary?: ActivitySummaryType;
-  is_billable?: boolean;
 }
 
 export interface TimesheetSubmitPayload {

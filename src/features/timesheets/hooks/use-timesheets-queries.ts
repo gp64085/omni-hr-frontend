@@ -2,11 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { timesheetsApi } from "../api/timesheets-api";
 import {
   TimesheetEntryCreatePayload,
+  TimesheetEntryUpdatePayload,
   TimesheetStatusUpdatePayload,
 } from "../types/timesheet-types";
 import { queryKeys } from "@/lib/query-keys";
 import { useToast } from "@/components/providers/ToastProvider";
 import { getApiErrorMessage } from "@/lib/error-utils";
+import { formatMinutesToHHMM } from "@/lib/date-utils";
 
 export function useTimesheetEntriesQuery(params?: {
   start_date?: string;
@@ -24,15 +26,16 @@ export function useTimesheetEntriesQuery(params?: {
   });
 }
 
-export function useWeeklySummaryQuery(startDate: string, endDate: string) {
+export function useWeeklySummaryQuery(startDate: string, endDate: string, userId?: string) {
   return useQuery({
-    queryKey: queryKeys.timesheets.weeklySummary(startDate, endDate),
+    queryKey: queryKeys.timesheets.weeklySummary(startDate, endDate, userId),
     queryFn: async () => {
       const res = await timesheetsApi.getWeeklySummary({
         start_date: startDate,
         end_date: endDate,
+        user_id: userId,
       });
-      return res.data || { total_hours: 0, by_project: {}, daily_breakdown: {} };
+      return res.data || null;
     },
     staleTime: 30 * 1000,
   });
@@ -60,16 +63,34 @@ export function useLogTimesheetMutation() {
   return useMutation({
     mutationFn: (payload: TimesheetEntryCreatePayload) => timesheetsApi.createEntry(payload),
     onSuccess: (_, variables) => {
-      const totalHours = variables.hours_spent || 0;
+      const totalMinutes = variables.total_minutes_spent || 0;
       success(
         "Work Logged",
-        `Recorded timesheet entries (${totalHours.toFixed(1)}h) for ${variables.work_date}.`
+        `Recorded timesheet entries (${formatMinutesToHHMM(totalMinutes)}) for ${variables.work_date}.`
       );
       queryClient.invalidateQueries({ queryKey: queryKeys.timesheets.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
     },
     onError: (err) => {
       error("Log Failed", getApiErrorMessage(err));
+    },
+  });
+}
+
+export function useUpdateTimesheetMutation() {
+  const queryClient = useQueryClient();
+  const { success, error } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: TimesheetEntryUpdatePayload }) =>
+      timesheetsApi.updateEntry(id, payload),
+    onSuccess: () => {
+      success("Timesheet Updated", "Your timesheet changes have been saved.");
+      queryClient.invalidateQueries({ queryKey: queryKeys.timesheets.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+    },
+    onError: (err) => {
+      error("Update Failed", getApiErrorMessage(err));
     },
   });
 }

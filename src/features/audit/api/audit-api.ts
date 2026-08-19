@@ -1,9 +1,9 @@
 import { apiClient } from "@/lib/api-client";
 import { AuditLog, AuditLogListParams } from "../types/audit-types";
-import { StandardApiResponse } from "@/types/api";
+import { ApiResponse } from "@/types/api";
 
 export const auditApi = {
-  listLogs: async (params?: AuditLogListParams): Promise<StandardApiResponse<AuditLog[]>> => {
+  listLogs: async (params?: AuditLogListParams): Promise<ApiResponse<AuditLog[]>> => {
     const res = await apiClient.get("/audit-logs", { params });
     return res.data;
   },

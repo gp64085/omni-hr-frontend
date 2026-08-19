@@ -7,7 +7,7 @@ import {
   UserUpdatePayload,
 } from "@/features/users/types/user-types";
 import { UserProfile, UserProfileData } from "@/types/user";
-import { StandardApiResponse } from "@/types/api";
+import { ApiResponse } from "@/types/api";
 
 const baseUsersApi = createCrudApi<
   UserProfile,
@@ -24,28 +24,23 @@ export const usersApi = {
   getUserById: baseUsersApi.getById,
   createUser: baseUsersApi.create,
   updateUser: baseUsersApi.update,
-  deleteUser: async (id: string): Promise<StandardApiResponse<{ message: string }>> => {
-    const res = await apiClient.delete<StandardApiResponse<{ message: string }>>(`/users/${id}`);
+  deleteUser: async (id: string): Promise<ApiResponse<{ message: string }>> => {
+    const res = await apiClient.delete<ApiResponse<{ message: string }>>(`/users/${id}`);
     return res.data;
   },
 
-  getCurrentUser: async (): Promise<StandardApiResponse<UserProfile>> => {
-    const res = await apiClient.get<StandardApiResponse<UserProfile>>("/users/me");
+  getCurrentUser: async (): Promise<ApiResponse<UserProfile>> => {
+    const res = await apiClient.get<ApiResponse<UserProfile>>("/users/me");
     return res.data;
   },
 
-  getProfile: async (): Promise<StandardApiResponse<UserProfileData>> => {
-    const res = await apiClient.get<StandardApiResponse<UserProfileData>>("/users/me/profile");
+  getProfile: async (): Promise<ApiResponse<UserProfileData>> => {
+    const res = await apiClient.get<ApiResponse<UserProfileData>>("/users/me/profile");
     return res.data;
   },
 
-  updateProfile: async (
-    payload: ProfileUpdatePayload
-  ): Promise<StandardApiResponse<UserProfileData>> => {
-    const res = await apiClient.put<StandardApiResponse<UserProfileData>>(
-      "/users/me/profile",
-      payload
-    );
+  updateProfile: async (payload: ProfileUpdatePayload): Promise<ApiResponse<UserProfileData>> => {
+    const res = await apiClient.put<ApiResponse<UserProfileData>>("/users/me/profile", payload);
     return res.data;
   },
 };

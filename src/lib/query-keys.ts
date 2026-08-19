@@ -22,8 +22,15 @@ export const queryKeys = {
     list: (params?: Record<string, unknown>) => [...queryKeys.roles.lists(), params] as const,
     details: () => [...queryKeys.roles.all, "detail"] as const,
     detail: (id: string) => [...queryKeys.roles.details(), id] as const,
-    permissions: (params?: Record<string, unknown>) =>
-      [...queryKeys.roles.all, "permissions", params] as const,
+    rolePermissions: (roleId: string) => [...queryKeys.roles.all, "permissions", roleId] as const,
+    permissions: (params?: Record<string, unknown>) => queryKeys.permissions.list(params),
+  },
+  permissions: {
+    all: ["permissions"] as const,
+    lists: () => [...queryKeys.permissions.all, "list"] as const,
+    list: (params?: Record<string, unknown>) => [...queryKeys.permissions.lists(), params] as const,
+    details: () => [...queryKeys.permissions.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.permissions.details(), id] as const,
   },
   leaves: {
     all: ["leaves"] as const,
