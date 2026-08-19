@@ -25,7 +25,7 @@ import { LogTimesheetModal } from "@/features/timesheets/components/LogTimesheet
 import { useToast } from "@/components/providers/ToastProvider";
 import { useDashboardCalendar } from "@/features/dashboard/hooks/useDashboardCalendar";
 import { getApiErrorMessage } from "@/lib/error-utils";
-import { formatDecimalHoursToHHMM } from "@/lib/date-utils";
+import { formatMinutesToHHMM } from "@/lib/date-utils";
 import { MONTH_NAMES, WEEK_DAYS_FULL, WEEK_DAYS_SHORT } from "@/constants";
 
 export function DashboardCalendar() {
@@ -64,8 +64,8 @@ export function DashboardCalendar() {
         setApplyLeaveModalOpen(false);
         setSelectedDateStr(null);
         refreshCalendar();
-      } catch (err) {
-        error("Application Failed", getApiErrorMessage(err));
+      } catch (errorResponse) {
+        error("Application Failed", getApiErrorMessage(errorResponse));
       } finally {
         setActionLoading(false);
       }
@@ -78,16 +78,16 @@ export function DashboardCalendar() {
       setActionLoading(true);
       try {
         await timesheetsApi.createEntry(payload);
-        const totalHours = payload.hours_spent || 0;
+        const totalMinutes = payload.total_minutes_spent || 0;
         success(
           "Work Logged",
-          `Recorded timesheet entries (${totalHours.toFixed(1)}h) for ${payload.work_date}.`
+          `Recorded timesheet entries (${formatMinutesToHHMM(totalMinutes)}) for ${payload.work_date}.`
         );
         setLogWorkModalOpen(false);
         setSelectedDateStr(null);
         refreshCalendar();
-      } catch (err) {
-        error("Log Failed", getApiErrorMessage(err));
+      } catch (errorResponse) {
+        error("Log Failed", getApiErrorMessage(errorResponse));
       } finally {
         setActionLoading(false);
       }
@@ -219,9 +219,9 @@ export function DashboardCalendar() {
                       {dayNum}
                     </span>
 
-                    {events.totalHours > 0 && (
+                    {events.totalMinutes > 0 && (
                       <span className="text-[10px] font-bold text-emerald-400 font-mono bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
-                        {formatDecimalHoursToHHMM(events.totalHours)}
+                        {formatMinutesToHHMM(events.totalMinutes)}
                       </span>
                     )}
                   </div>
@@ -240,27 +240,30 @@ export function DashboardCalendar() {
                     ))}
 
                     {/* Leaves */}
-                    {events.leaves.map((l) => (
+                    {events.leaves.map((leave) => (
                       <div
-                        key={l.id}
+                        key={leave.id}
                         className="truncate text-[10px] px-1.5 py-0.5 rounded font-medium border bg-purple-500/15 border-purple-500/30 text-purple-300"
-                        title={`🌴 ${l.leave_type?.name || "Leave"} (Approved)`}
+                        title={`🌴 ${leave.leave_type?.name || "Leave"} (Approved)`}
                       >
-                        🌴 {l.leave_type?.name || "Leave"}
+                        🌴 {leave.leave_type?.name || "Leave"}
                       </div>
                     ))}
 
                     {/* Timesheets entries */}
-                    {events.timesheets.slice(0, 2).map((t) => (
-                      <div
-                        key={t.id}
-                        className="truncate text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono"
-                        title={`${formatDecimalHoursToHHMM(t.hours_spent)} - ${typeof t.activity_summary === "string" ? t.activity_summary : "Project Tasks"}`}
-                      >
-                        ⏱️ {formatDecimalHoursToHHMM(t.hours_spent)}{" "}
-                        {t.project_name || t.project?.code || ""}
-                      </div>
-                    ))}
+                    {events.timesheets.slice(0, 2).map((timesheet) => {
+                      const tMinutes = Number(timesheet.total_minutes_spent) || 0;
+                      return (
+                        <div
+                          key={timesheet.id}
+                          className="truncate text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono"
+                          title={`${formatMinutesToHHMM(tMinutes)} - ${typeof timesheet.activity_summary === "string" ? timesheet.activity_summary : "Project Tasks"}`}
+                        >
+                          ⏱️ {formatMinutesToHHMM(tMinutes)}{" "}
+                          {timesheet.project_name || timesheet.project?.code || ""}
+                        </div>
+                      );
+                    })}
                     {events.timesheets.length > 2 && (
                       <div className="text-[9px] text-slate-500 px-1">
                         +{events.timesheets.length - 2} more logs
@@ -398,9 +401,9 @@ export function DashboardCalendar() {
                   <Clock className="w-3.5 h-3.5" />
                   <span>Logged Timesheets ({selectedDateEvents.timesheets.length})</span>
                 </h4>
-                {selectedDateEvents.totalHours > 0 && (
+                {selectedDateEvents.totalMinutes > 0 && (
                   <span className="text-xs font-extrabold text-white font-mono">
-                    Total: {formatDecimalHoursToHHMM(selectedDateEvents.totalHours)}
+                    Total: {formatMinutesToHHMM(selectedDateEvents.totalMinutes)}
                   </span>
                 )}
               </div>
@@ -410,68 +413,73 @@ export function DashboardCalendar() {
                   No work hours logged on this date yet.
                 </div>
               ) : (
-                selectedDateEvents.timesheets.map((t) => (
-                  <div
-                    key={t.id}
-                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs space-y-1"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-white">
-                        {t.project_name || t.project?.name || "Project Work"}
-                      </span>
-                      <span className="font-extrabold font-mono text-emerald-400">
-                        {formatDecimalHoursToHHMM(t.hours_spent || 0)}
-                      </span>
-                    </div>
-                    {typeof t.activity_summary === "string" ? (
-                      <div className="text-[11px] text-slate-300">{t.activity_summary}</div>
-                    ) : Array.isArray(t.activity_summary) ? (
-                      <div className="space-y-0.5 pt-1">
-                        {t.activity_summary.map(
-                          (
-                            alloc:
-                              | TimesheetProjectAllocation
-                              | TimesheetTaskDetail
-                              | Record<string, unknown>,
-                            idx: number
-                          ) => {
-                            const tasks =
-                              "tasks" in alloc && Array.isArray(alloc.tasks) ? alloc.tasks : null;
-                            const projName =
-                              "project_name" in alloc && alloc.project_name
-                                ? alloc.project_name
-                                : "Project";
-                            const summary =
-                              "summary" in alloc && typeof alloc.summary === "string"
-                                ? alloc.summary
-                                : JSON.stringify(alloc);
-                            return (
-                              <div key={idx} className="text-[11px] text-slate-300">
-                                {tasks ? (
-                                  <div>
-                                    <span className="font-semibold text-indigo-300">
-                                      {String(projName)}:{" "}
-                                    </span>
-                                    <span>
-                                      {tasks.map((tsk) => String(tsk.summary || "")).join(", ")}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span>{summary}</span>
-                                )}
-                              </div>
-                            );
-                          }
-                        )}
+                selectedDateEvents.timesheets.map((timesheet) => {
+                  const entryMinutes = Number(timesheet.total_minutes_spent) || 0;
+                  return (
+                    <div
+                      key={timesheet.id}
+                      className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white">
+                          {timesheet.project_name || timesheet.project?.name || "Project Work"}
+                        </span>
+                        <span className="font-extrabold font-mono text-emerald-400">
+                          {formatMinutesToHHMM(entryMinutes)}
+                        </span>
                       </div>
-                    ) : null}
-                    <div className="flex items-center gap-2 pt-0.5 text-[10px] text-slate-500">
-                      <span>Total: {(t.hours_spent || 0).toFixed(1)} hrs</span>
-                      <span>•</span>
-                      <span className="uppercase">{t.status}</span>
+                      {typeof timesheet.activity_summary === "string" ? (
+                        <div className="text-[11px] text-slate-300">
+                          {timesheet.activity_summary}
+                        </div>
+                      ) : Array.isArray(timesheet.activity_summary) ? (
+                        <div className="space-y-0.5 pt-1">
+                          {timesheet.activity_summary.map(
+                            (
+                              alloc:
+                                | TimesheetProjectAllocation
+                                | TimesheetTaskDetail
+                                | Record<string, unknown>,
+                              index: number
+                            ) => {
+                              const tasks =
+                                "tasks" in alloc && Array.isArray(alloc.tasks) ? alloc.tasks : null;
+                              const projName =
+                                "project_name" in alloc && alloc.project_name
+                                  ? alloc.project_name
+                                  : "Project";
+                              const summary =
+                                "summary" in alloc && typeof alloc.summary === "string"
+                                  ? alloc.summary
+                                  : JSON.stringify(alloc);
+                              return (
+                                <div key={index} className="text-[11px] text-slate-300">
+                                  {tasks ? (
+                                    <div>
+                                      <span className="font-semibold text-indigo-300">
+                                        {String(projName)}:{" "}
+                                      </span>
+                                      <span>
+                                        {tasks.map((task) => String(task.summary || "")).join(", ")}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span>{summary}</span>
+                                  )}
+                                </div>
+                              );
+                            }
+                          )}
+                        </div>
+                      ) : null}
+                      <div className="flex items-center gap-2 pt-0.5 text-[10px] text-slate-500">
+                        <span>Total: {formatMinutesToHHMM(entryMinutes)}</span>
+                        <span>•</span>
+                        <span className="uppercase">{timesheet.status}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

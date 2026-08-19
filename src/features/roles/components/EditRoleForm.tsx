@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { rolesApi } from "../api/roles-api";
+import { permissionsApi } from "../api/permissions-api";
 import { Permission, Role, RoleUpdatePayload } from "../types/role-types";
 import { CheckSquare, Square } from "lucide-react";
 import { PAGINATION } from "@/constants";
@@ -25,7 +25,7 @@ export function EditRoleForm({ role, onClose, onSubmit, isLoading }: EditRoleFor
 
   useEffect(() => {
     let isMounted = true;
-    rolesApi.listPermissions({ limit: PAGINATION.MAX_LIMIT }).then((res) => {
+    permissionsApi.listPermissions({ limit: PAGINATION.MAX_LIMIT }).then((res) => {
       if (isMounted && res.data) {
         setPermissions(res.data);
       }

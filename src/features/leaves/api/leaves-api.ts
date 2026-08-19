@@ -9,22 +9,20 @@ import {
   LeaveStatusUpdatePayload,
   LeaveType,
 } from "../types/leave-types";
-import { StandardApiResponse } from "@/types/api";
+import { ApiResponse } from "@/types/api";
 
 export const leavesApi = {
-  getLeaveTypes: async (): Promise<StandardApiResponse<LeaveType[]>> => {
+  getLeaveTypes: async (): Promise<ApiResponse<LeaveType[]>> => {
     const res = await apiClient.get("/leaves/types");
     return res.data;
   },
 
-  getLeaveBalance: async (year?: number): Promise<StandardApiResponse<LeaveAllocation[]>> => {
+  getLeaveBalance: async (year?: number): Promise<ApiResponse<LeaveAllocation[]>> => {
     const res = await apiClient.get("/leaves/balance", { params: { year } });
     return res.data;
   },
 
-  applyLeave: async (
-    payload: LeaveRequestCreatePayload
-  ): Promise<StandardApiResponse<LeaveRequest>> => {
+  applyLeave: async (payload: LeaveRequestCreatePayload): Promise<ApiResponse<LeaveRequest>> => {
     const res = await apiClient.post("/leaves/requests", payload);
     return res.data;
   },
@@ -36,7 +34,7 @@ export const leavesApi = {
     user_id?: string;
     start_date?: string;
     end_date?: string;
-  }): Promise<StandardApiResponse<LeaveRequest[]>> => {
+  }): Promise<ApiResponse<LeaveRequest[]>> => {
     const res = await apiClient.get("/leaves/requests", { params });
     return res.data;
   },
@@ -44,17 +42,17 @@ export const leavesApi = {
   updateLeaveStatus: async (
     id: string,
     payload: LeaveStatusUpdatePayload
-  ): Promise<StandardApiResponse<LeaveRequest>> => {
+  ): Promise<ApiResponse<LeaveRequest>> => {
     const res = await apiClient.patch(`/leaves/requests/${id}/status`, payload);
     return res.data;
   },
 
-  cancelLeave: async (id: string): Promise<StandardApiResponse<{ message: string }>> => {
+  cancelLeave: async (id: string): Promise<ApiResponse<{ message: string }>> => {
     const res = await apiClient.delete(`/leaves/requests/${id}`);
     return res.data;
   },
 
-  listPolicies: async (): Promise<StandardApiResponse<LeavePolicy[]>> => {
+  listPolicies: async (): Promise<ApiResponse<LeavePolicy[]>> => {
     const res = await apiClient.get("/leaves/policies");
     return res.data;
   },
@@ -66,7 +64,7 @@ export const leavesApi = {
     days_per_period: number;
     max_carry_forward_days: number;
     encashable: boolean;
-  }): Promise<StandardApiResponse<LeavePolicy>> => {
+  }): Promise<ApiResponse<LeavePolicy>> => {
     const res = await apiClient.post("/leaves/policies", payload);
     return res.data;
   },
@@ -76,21 +74,19 @@ export const leavesApi = {
     leave_type_id: string;
     days: number;
     reason: string;
-  }): Promise<StandardApiResponse<LeaveAllocation>> => {
+  }): Promise<ApiResponse<LeaveAllocation>> => {
     const res = await apiClient.post("/leaves/allocations/grant", payload);
     return res.data;
   },
 
-  triggerAccruals: async (
-    target_date?: string
-  ): Promise<StandardApiResponse<{ message: string }>> => {
+  triggerAccruals: async (target_date?: string): Promise<ApiResponse<{ message: string }>> => {
     const res = await apiClient.post("/leaves/accruals/run", null, { params: { target_date } });
     return res.data;
   },
 };
 
 export const holidaysApi = {
-  listHolidays: async (year?: number): Promise<StandardApiResponse<Holiday[]>> => {
+  listHolidays: async (year?: number): Promise<ApiResponse<Holiday[]>> => {
     const res = await apiClient.get("/holidays", { params: { year } });
     return res.data;
   },
@@ -99,7 +95,7 @@ export const holidaysApi = {
     name: string;
     holiday_date: string;
     is_recurring?: boolean;
-  }): Promise<StandardApiResponse<Holiday>> => {
+  }): Promise<ApiResponse<Holiday>> => {
     const res = await apiClient.post("/holidays", payload);
     return res.data;
   },

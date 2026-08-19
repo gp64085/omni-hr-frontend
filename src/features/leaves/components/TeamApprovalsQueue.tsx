@@ -147,24 +147,29 @@ export function TeamApprovalsQueue({
     {
       header: "Review Action",
       align: "right",
-      cell: (r) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={() => handleOpenAction(r, "approved")}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold border border-emerald-500/30 transition-all cursor-pointer"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Approve</span>
-          </button>
-          <button
-            onClick={() => handleOpenAction(r, "rejected")}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 text-xs font-semibold border border-rose-500/30 transition-all cursor-pointer"
-          >
-            <XCircle className="w-3.5 h-3.5" />
-            <span>Reject</span>
-          </button>
-        </div>
-      ),
+      cell: (r) => {
+        const isActionable = r.status === "pending";
+        if (!isActionable) return null;
+
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => handleOpenAction(r, "approved")}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold border border-emerald-500/30 transition-all cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Approve</span>
+            </button>
+            <button
+              onClick={() => handleOpenAction(r, "rejected")}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 text-xs font-semibold border border-rose-500/30 transition-all cursor-pointer"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Reject</span>
+            </button>
+          </div>
+        );
+      },
     },
   ];
 

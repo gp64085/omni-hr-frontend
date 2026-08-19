@@ -13,7 +13,7 @@ export interface DayEvents {
   holidays: Holiday[];
   leaves: LeaveRequest[];
   timesheets: TimesheetEntry[];
-  totalHours: number;
+  totalMinutes: number;
   hasEvents: boolean;
 }
 
@@ -90,10 +90,10 @@ export function useDashboardCalendar() {
   const holidaysByDate = useMemo(() => {
     const map = new Map<string, Holiday[]>();
     const items = monthData?.holidays || [];
-    for (const h of items) {
-      const existing = map.get(h.holiday_date) || [];
-      existing.push(h);
-      map.set(h.holiday_date, existing);
+    for (const holiday of items) {
+      const existing = map.get(holiday.holiday_date) || [];
+      existing.push(holiday);
+      map.set(holiday.holiday_date, existing);
     }
     return map;
   }, [monthData?.holidays]);
@@ -101,10 +101,10 @@ export function useDashboardCalendar() {
   const timesheetsByDate = useMemo(() => {
     const map = new Map<string, TimesheetEntry[]>();
     const items = monthData?.timesheets || [];
-    for (const t of items) {
-      const existing = map.get(t.work_date) || [];
-      existing.push(t);
-      map.set(t.work_date, existing);
+    for (const item of items) {
+      const existing = map.get(item.work_date) || [];
+      existing.push(item);
+      map.set(item.work_date, existing);
     }
     return map;
   }, [monthData?.timesheets]);
@@ -112,7 +112,7 @@ export function useDashboardCalendar() {
   // Filter approved leaves
   const approvedLeaves = useMemo(() => {
     const items = monthData?.leaves || [];
-    return items.filter((l) => l.status === LEAVE_STATUS.APPROVED);
+    return items.filter((leave) => leave.status === LEAVE_STATUS.APPROVED);
   }, [monthData?.leaves]);
 
   // Grid layout computations
@@ -130,8 +130,8 @@ export function useDashboardCalendar() {
 
   const getEventsForDate = useCallback(
     (dateStr: string): DayEvents => {
-      const [y, m, d] = dateStr.split("-").map(Number);
-      const dateObj = new Date(y, m - 1, d);
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const dateObj = new Date(year, month - 1, day);
       const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
@@ -141,10 +141,10 @@ export function useDashboardCalendar() {
       const dayLeaves =
         isWeekend || isHoliday
           ? []
-          : approvedLeaves.filter((l) => {
-              if (dateStr < l.start_date || dateStr > l.end_date) return false;
-              if (l.extra_metadata?.days && l.extra_metadata.days.length > 0) {
-                const dayItem = l.extra_metadata.days.find((item) => item.date === dateStr);
+          : approvedLeaves.filter((leave) => {
+              if (dateStr < leave.start_date || dateStr > leave.end_date) return false;
+              if (leave.extra_metadata?.days && leave.extra_metadata.days.length > 0) {
+                const dayItem = leave.extra_metadata.days.find((item) => item.date === dateStr);
                 if (dayItem) {
                   return dayItem.day_status === LEAVE_STATUS.APPROVED;
                 }
@@ -153,7 +153,10 @@ export function useDashboardCalendar() {
             });
 
       const dayTimesheets = timesheetsByDate.get(dateStr) || [];
-      const totalHours = dayTimesheets.reduce((acc, t) => acc + (t.hours_spent || 0), 0);
+      const totalMinutes = dayTimesheets.reduce(
+        (sumMinutes, timesheet) => sumMinutes + (Number(timesheet.total_minutes_spent) || 0),
+        0
+      );
 
       return {
         isWeekend,
@@ -161,7 +164,7 @@ export function useDashboardCalendar() {
         holidays: dayHolidays,
         leaves: dayLeaves,
         timesheets: dayTimesheets,
-        totalHours,
+        totalMinutes,
         hasEvents: dayHolidays.length > 0 || dayLeaves.length > 0 || dayTimesheets.length > 0,
       };
     },

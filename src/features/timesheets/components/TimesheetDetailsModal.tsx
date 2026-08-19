@@ -9,7 +9,7 @@ import {
   TimesheetProjectAllocation,
   TimesheetTaskDetail,
 } from "../types/timesheet-types";
-import { formatDecimalHoursToHHMM } from "@/lib/date-utils";
+import { formatMinutesToHHMM, formatDecimalHoursToHHMM } from "@/lib/date-utils";
 import { Calendar, Briefcase, AlertCircle } from "lucide-react";
 
 interface TimesheetDetailsModalProps {
@@ -34,6 +34,8 @@ export function TimesheetDetailsModal({ isOpen, onClose, entry }: TimesheetDetai
     }
   }
 
+  const entryMinutes = Number(entry.total_minutes_spent) || 0;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Timesheet Details" maxWidth="2xl">
       <div className="space-y-6">
@@ -54,10 +56,10 @@ export function TimesheetDetailsModal({ isOpen, onClose, entry }: TimesheetDetai
           <div className="flex items-center gap-4">
             <div>
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                Total Hours
+                Total Time
               </span>
               <span className="text-base font-mono font-bold text-indigo-400">
-                {formatDecimalHoursToHHMM(entry.hours_spent || 0)}
+                {formatMinutesToHHMM(entryMinutes)}
               </span>
             </div>
 
@@ -94,12 +96,14 @@ export function TimesheetDetailsModal({ isOpen, onClose, entry }: TimesheetDetai
             </div>
           ) : (
             <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-              {parsed.map((item, idx) => {
+              {parsed.map((item, itemIndex) => {
                 if (typeof item === "object" && item !== null && "tasks" in item) {
                   const alloc = item as TimesheetProjectAllocation;
+                  const allocMinutes = Number(alloc.total_minutes_spent) || 0;
+
                   return (
                     <div
-                      key={idx}
+                      key={itemIndex}
                       className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3"
                     >
                       <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
@@ -109,25 +113,24 @@ export function TimesheetDetailsModal({ isOpen, onClose, entry }: TimesheetDetai
                           </span>
                         </div>
 
-                        {alloc.total_hours !== undefined && (
-                          <div className="px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-xs font-mono font-bold text-indigo-300">
-                            {formatDecimalHoursToHHMM(Number(alloc.total_hours))}
-                          </div>
-                        )}
+                        <div className="px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-xs font-mono font-bold text-indigo-300">
+                          {formatMinutesToHHMM(allocMinutes)}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
                         {alloc.tasks && alloc.tasks.length > 0 ? (
-                          alloc.tasks.map((t: TimesheetTaskDetail, tIdx: number) => (
+                          alloc.tasks.map((task: TimesheetTaskDetail, taskIndex: number) => (
                             <div
-                              key={tIdx}
+                              key={taskIndex}
                               className="flex items-start justify-between gap-3 p-2 rounded-lg bg-slate-900/60 border border-slate-800/50"
                             >
                               <p className="text-xs text-slate-200 leading-relaxed flex-1 break-words">
-                                • {t.summary}
+                                • {task.summary}
                               </p>
                               <span className="font-mono text-xs font-semibold text-slate-300 shrink-0 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
-                                {t.formatted_time || formatDecimalHoursToHHMM(Number(t.hours))}
+                                {task.formatted_time ||
+                                  formatDecimalHoursToHHMM(Number(task.hours))}
                               </span>
                             </div>
                           ))
@@ -142,7 +145,7 @@ export function TimesheetDetailsModal({ isOpen, onClose, entry }: TimesheetDetai
                 const fallbackItem = item as Record<string, unknown>;
                 return (
                   <div
-                    key={idx}
+                    key={itemIndex}
                     className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-start justify-between gap-3"
                   >
                     <p className="text-xs text-slate-200 leading-relaxed break-words">

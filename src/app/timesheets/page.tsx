@@ -10,7 +10,11 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { Tabs } from "@/components/ui/Tabs";
 import { Clock, CheckSquare, Plus, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-import { TimesheetEntryCreatePayload } from "@/features/timesheets/types/timesheet-types";
+import {
+  TimesheetEntry,
+  TimesheetEntryCreatePayload,
+  TimesheetEntryUpdatePayload,
+} from "@/features/timesheets/types/timesheet-types";
 import { useAuthStore } from "@/store/use-auth-store";
 import { getWeekDates, formatDisplayDate } from "@/lib/date-utils";
 import { PERMISSIONS, PAGINATION } from "@/constants";
@@ -19,6 +23,7 @@ import {
   useWeeklySummaryQuery,
   useManagerTimesheetReviewQuery,
   useLogTimesheetMutation,
+  useUpdateTimesheetMutation,
   useDeleteTimesheetMutation,
   useUpdateTimesheetStatusMutation,
 } from "@/features/timesheets/hooks/use-timesheets-queries";
@@ -29,6 +34,7 @@ export default function TimesheetsPage() {
   const [weekOffset, setWeekOffset] = useState(0);
 
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<TimesheetEntry | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const canApprove = hasPermission(PERMISSIONS.TIMESHEET_APPROVE);
@@ -59,6 +65,7 @@ export default function TimesheetsPage() {
 
   // Mutations
   const logMutation = useLogTimesheetMutation();
+  const updateMutation = useUpdateTimesheetMutation();
   const deleteMutation = useDeleteTimesheetMutation();
   const updateStatusMutation = useUpdateTimesheetStatusMutation();
 
@@ -67,6 +74,17 @@ export default function TimesheetsPage() {
   const handleCreateEntry = async (payload: TimesheetEntryCreatePayload) => {
     await logMutation.mutateAsync(payload);
     setLogModalOpen(false);
+  };
+
+  const handleUpdateEntry = async (id: string, payload: TimesheetEntryUpdatePayload) => {
+    await updateMutation.mutateAsync({ id, payload });
+    setEditingEntry(null);
+    setLogModalOpen(false);
+  };
+
+  const handleOpenEdit = (entry: TimesheetEntry) => {
+    setEditingEntry(entry);
+    setLogModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -183,6 +201,7 @@ export default function TimesheetsPage() {
           <WeeklyTimesheetGrid
             entries={entries}
             isLoading={isLoading}
+            onEdit={handleOpenEdit}
             onDelete={(id) => setDeleteTargetId(id)}
           />
         ) : (
@@ -195,9 +214,15 @@ export default function TimesheetsPage() {
 
         <LogTimesheetModal
           isOpen={logModalOpen}
-          onClose={() => setLogModalOpen(false)}
+          onClose={() => {
+            setLogModalOpen(false);
+            setEditingEntry(null);
+          }}
           onSubmit={handleCreateEntry}
-          isLoading={logMutation.isPending}
+          onUpdate={handleUpdateEntry}
+          isLoading={logMutation.isPending || updateMutation.isPending}
+          existingEntries={entries}
+          editingEntry={editingEntry}
         />
 
         <ConfirmDialog

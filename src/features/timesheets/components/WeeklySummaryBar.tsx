@@ -4,8 +4,7 @@ import React from "react";
 import { WeeklyTimesheetSummary } from "../types/timesheet-types";
 import { Clock } from "lucide-react";
 import { TIMESHEET_CONSTANTS } from "@/constants";
-
-import { formatDecimalHoursToHHMM } from "@/lib/date-utils";
+import { formatMinutesToHHMM } from "@/lib/date-utils";
 
 interface WeeklySummaryBarProps {
   summary: WeeklyTimesheetSummary | null;
@@ -19,11 +18,9 @@ export function WeeklySummaryBar({ summary, isLoading }: WeeklySummaryBarProps) 
     );
   }
 
-  const total = summary.total_hours || 0;
-  const billable = summary.billable_hours || 0;
-  const nonBillable = summary.non_billable_hours || 0;
-  const target = TIMESHEET_CONSTANTS.STANDARD_WEEKLY_HOURS;
-  const targetPercent = Math.min(100, Math.round((total / target) * 100));
+  const totalMins = Number(summary.total_minutes_spent) || 0;
+  const targetMins = TIMESHEET_CONSTANTS.STANDARD_WEEKLY_HOURS * 60;
+  const targetPercent = Math.min(100, Math.round((totalMins / targetMins) * 100));
 
   return (
     <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl space-y-4">
@@ -38,30 +35,16 @@ export function WeeklySummaryBar({ summary, isLoading }: WeeklySummaryBarProps) 
             </h3>
             <p className="text-xs text-slate-400">
               Standard corporate expectation:{" "}
-              <strong className="text-slate-200">{formatDecimalHoursToHHMM(target)} / week</strong>
+              <strong className="text-slate-200">{formatMinutesToHHMM(targetMins)} / week</strong>
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-4 text-xs">
           <div className="text-right">
-            <div className="text-slate-400 text-[11px]">Total Logged</div>
-            <div className="text-lg font-extrabold text-white font-mono">
-              {formatDecimalHoursToHHMM(total)}
-            </div>
-          </div>
-          <div className="h-8 w-px bg-slate-800" />
-          <div className="text-right">
-            <div className="text-emerald-400 text-[11px]">Billable</div>
-            <div className="text-lg font-extrabold text-emerald-400 font-mono">
-              {formatDecimalHoursToHHMM(billable)}
-            </div>
-          </div>
-          <div className="h-8 w-px bg-slate-800" />
-          <div className="text-right">
-            <div className="text-slate-400 text-[11px]">Internal / Admin</div>
-            <div className="text-lg font-extrabold text-slate-300 font-mono">
-              {formatDecimalHoursToHHMM(nonBillable)}
+            <div className="text-slate-400 text-[11px]">Total Time Logged</div>
+            <div className="text-xl font-extrabold text-indigo-300 font-mono">
+              {formatMinutesToHHMM(totalMins)}
             </div>
           </div>
         </div>
