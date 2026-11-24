@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -42,6 +43,15 @@ export function LoginForm({
         placeholder="••••••••••••"
         required
       />
+
+      <div className="flex items-center justify-end -mt-1">
+        <Link
+          href="/forgot-password"
+          className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+        >
+          Forgot password?
+        </Link>
+      </div>
 
       <Button type="submit" variant="gradient" isLoading={isLoading} className="w-full mt-2">
         Sign In to Workspace
