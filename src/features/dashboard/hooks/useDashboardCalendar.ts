@@ -22,8 +22,10 @@ export function useDashboardCalendar() {
   const today = useMemo(() => new Date(), []);
   const todayStr = useMemo(() => today.toISOString().split("T")[0], [today]);
 
-  const [currentYear, setCurrentYear] = useState(() => today.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(() => today.getMonth());
+  const [{ year: currentYear, month: currentMonth }, setYearMonth] = useState(() => ({
+    year: today.getFullYear(),
+    month: today.getMonth(),
+  }));
 
   const firstDayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -62,29 +64,26 @@ export function useDashboardCalendar() {
   }, [queryClient, currentYear, currentMonth]);
 
   const handlePrevMonth = useCallback(() => {
-    setCurrentMonth((prevMonth) => {
-      if (prevMonth === 0) {
-        setCurrentYear((prevYear) => prevYear - 1);
-        return 11;
+    setYearMonth(({ year, month }) => {
+      if (month === 0) {
+        return { year: year - 1, month: 11 };
       }
-      return prevMonth - 1;
+      return { year, month: month - 1 };
     });
   }, []);
 
   const handleNextMonth = useCallback(() => {
-    setCurrentMonth((prevMonth) => {
-      if (prevMonth === 11) {
-        setCurrentYear((prevYear) => prevYear + 1);
-        return 0;
+    setYearMonth(({ year, month }) => {
+      if (month === 11) {
+        return { year: year + 1, month: 0 };
       }
-      return prevMonth + 1;
+      return { year, month: month + 1 };
     });
   }, []);
 
   const handleJumpToday = useCallback(() => {
     const now = new Date();
-    setCurrentYear(now.getFullYear());
-    setCurrentMonth(now.getMonth());
+    setYearMonth({ year: now.getFullYear(), month: now.getMonth() });
   }, []);
 
   const holidaysByDate = useMemo(() => {
