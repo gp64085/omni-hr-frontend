@@ -3,7 +3,7 @@
 import React from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Project, ProjectUpdatePayload } from "../types/project-types";
-import { EditProjectForm } from "./EditProjectForm";
+import { EditProjectForm } from "../forms/EditProjectForm";
 
 interface EditProjectModalProps {
   isOpen: boolean;

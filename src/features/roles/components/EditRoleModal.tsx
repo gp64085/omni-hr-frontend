@@ -3,7 +3,7 @@
 import React from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Role, RoleUpdatePayload } from "../types/role-types";
-import { EditRoleForm } from "./EditRoleForm";
+import { EditRoleForm } from "../forms/EditRoleForm";
 
 interface EditRoleModalProps {
   isOpen: boolean;

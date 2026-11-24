@@ -10,7 +10,7 @@ import { UserProfile } from "@/types/user";
 import { UserUpdatePayload } from "../types/user-types";
 import { PAGINATION } from "@/constants";
 
-interface EditUserFormProps {
+export interface EditUserFormProps {
   user: UserProfile;
   onClose: () => void;
   onSubmit: (id: string, payload: UserUpdatePayload) => Promise<void>;

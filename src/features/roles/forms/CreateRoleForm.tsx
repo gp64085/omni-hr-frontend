@@ -1,26 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { permissionsApi } from "../api/permissions-api";
-import { Permission, Role, RoleUpdatePayload } from "../types/role-types";
+import { Permission, RoleCreatePayload } from "../types/role-types";
 import { CheckSquare, Square } from "lucide-react";
 import { PAGINATION } from "@/constants";
 
-interface EditRoleFormProps {
-  role: Role;
+export interface CreateRoleFormProps {
   onClose: () => void;
-  onSubmit: (id: string, payload: RoleUpdatePayload) => Promise<void>;
+  onSubmit: (payload: RoleCreatePayload) => Promise<void>;
   isLoading: boolean;
 }
 
-export function EditRoleForm({ role, onClose, onSubmit, isLoading }: EditRoleFormProps) {
-  const [name, setName] = useState(role.name);
-  const [description, setDescription] = useState(role.description || "");
-  const [selectedPermIds, setSelectedPermIds] = useState<string[]>(() => {
-    return role.permissions?.map((p) => p.id) || role.permission_ids || [];
-  });
+export function CreateRoleForm({ onClose, onSubmit, isLoading }: CreateRoleFormProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedPermIds, setSelectedPermIds] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
 
   useEffect(() => {
@@ -54,11 +51,14 @@ export function EditRoleForm({ role, onClose, onSubmit, isLoading }: EditRoleFor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(role.id, {
+    await onSubmit({
       name,
       description,
       permission_ids: selectedPermIds,
     });
+    setName("");
+    setDescription("");
+    setSelectedPermIds([]);
   };
 
   const groupedPerms: Record<string, Permission[]> = {};
@@ -72,10 +72,10 @@ export function EditRoleForm({ role, onClose, onSubmit, isLoading }: EditRoleFor
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        label="Role Name"
+        label="Role Identifier / Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        disabled={role.is_system}
+        placeholder="e.g. payroll_auditor"
         required
       />
 
@@ -83,7 +83,7 @@ export function EditRoleForm({ role, onClose, onSubmit, isLoading }: EditRoleFor
         label="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Role responsibilities"
+        placeholder="Role responsibilities and access boundary"
       />
 
       <div className="space-y-3">
@@ -154,14 +154,11 @@ export function EditRoleForm({ role, onClose, onSubmit, isLoading }: EditRoleFor
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-        <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="gradient" isLoading={isLoading}>
-          Save Changes
-        </Button>
-      </div>
+      <ModalFooter
+        onCancel={onClose}
+        submitLabel="Create Role"
+        isLoading={isLoading}
+      />
     </form>
   );
 }

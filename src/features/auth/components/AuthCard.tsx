@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
-import { LoginForm } from "./LoginForm";
+import { LoginForm } from "../forms/LoginForm";
 import { ShieldCheck } from "lucide-react";
 
 interface AuthCardProps {
