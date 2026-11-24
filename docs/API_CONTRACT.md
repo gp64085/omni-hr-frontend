@@ -49,6 +49,8 @@
 - `POST /api/v1/auth/login` - Authenticate with email/password & return JWT access + refresh tokens.
 - `POST /api/v1/auth/refresh` - Rotate refresh token to obtain a new access token.
 - `POST /api/v1/auth/logout` - Revoke current refresh token and invalidate session.
+- `POST /api/v1/auth/forgot-password` - Request password reset email (anti-enumeration 200 OK response).
+- `POST /api/v1/auth/reset-password` - Reset password with one-time token and revoke previous refresh tokens.
 - `GET /api/v1/auth/me` - Validate session and fetch current authenticated user profile context.
 
 ### 3.2 Roles & Permissions Management (RBAC)
