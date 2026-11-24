@@ -4,7 +4,7 @@ import React from "react";
 import { Modal } from "@/components/ui/Modal";
 import { UserProfile } from "@/types/user";
 import { UserUpdatePayload } from "../types/user-types";
-import { EditUserForm } from "./EditUserForm";
+import { EditUserForm } from "../forms/EditUserForm";
 
 interface EditUserModalProps {
   isOpen: boolean;

@@ -49,9 +49,9 @@ export default function LoginPage() {
                 <Lock className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-white">JWT Token Rotation</h4>
+                <h4 className="text-sm font-semibold text-white">Enhanced Session Protection</h4>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Single-use refresh token rotation with SHA-256 database hashing.
+                  Single-use token rotation and enterprise-grade identity protection.
                 </p>
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
-import { LoginForm } from "./LoginForm";
+import { LoginForm } from "../forms/LoginForm";
 import { ShieldCheck } from "lucide-react";
 
 interface AuthCardProps {
@@ -53,8 +53,7 @@ export function AuthCard({
 
       <div className="mt-6 pt-4 border-t border-slate-800 text-center">
         <p className="text-[11px] text-slate-500">
-          Need an account or password reset? Please contact your organization&apos;s HR
-          administrator.
+          Need an account? Please contact your organization&apos;s HR administrator.
         </p>
       </div>
     </Card>

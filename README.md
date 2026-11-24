@@ -7,6 +7,8 @@ The frontend client for **OmniHR** built with Next.js 16 (Turbopack), React 19, 
 ## 🌟 Highlights
 
 - **Aesthetic Glassmorphism Design**: Custom dark-mode UI tokens with sleek gradient accents and micro-animations.
+- **Modular Form Architecture**: Dedicated `forms/` folders within every feature module, cleanly separating form validation, state, and submissions from modal wrappers and pages.
+- **Enterprise Auth & Account Recovery**: Comprehensive authentication flow including login, anti-enumeration forgot-password request, and single-use password reset with token verification.
 - **Unified Monthly Workspace Calendar**: Rich interactive calendar featuring multi-layer badge overlays (Holidays, Leaves, Timesheets) and date inspector modals.
 - **Custom UI Components**:
   - `<DatePicker />`: Glassmorphic date popover with month/year navigation and quick presets.
@@ -30,7 +32,11 @@ npm install
 
 ### 2. Environment Variables
 
-Create `.env.local` in the `frontend/` root:
+Copy the environment template from `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
@@ -63,10 +69,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 ```
 frontend/src/
-├── app/                      # App router route handlers & pages
+├── app/                      # App router route handlers & lightweight pages
 │   ├── layout.tsx            # Global RootLayout with ToastProvider & Providers
 │   ├── page.tsx              # Landing / Redirection
 │   ├── login/                # Authentication page
+│   ├── forgot-password/      # Self-service password recovery request
+│   ├── reset-password/       # Secure token-based password reset
 │   ├── dashboard/            # Executive dashboard & month calendar
 │   ├── leaves/               # Leaves portal, team approvals, company holidays
 │   ├── timesheets/           # Timesheet logging & weekly manager reviews
@@ -82,15 +90,15 @@ frontend/src/
 │   └── ui/                   # Reusable atomic UI library (DatePicker, TimeSelect, Modal, etc.)
 │
 ├── constants/                # Permissions, roles, routes, pagination, timesheets, calendar
-├── features/                 # Domain modules (api, types, components)
-│   ├── audit/
-│   ├── auth/
-│   ├── dashboard/
-│   ├── leaves/
-│   ├── projects/
-│   ├── roles/
-│   ├── timesheets/
-│   └── users/
+├── features/                 # Domain modules (api, types, components, forms)
+│   ├── audit/                # api, components, types
+│   ├── auth/                 # api, components, forms (LoginForm, ForgotPasswordForm, ResetPasswordForm)
+│   ├── dashboard/            # components, hooks, types
+│   ├── leaves/               # api, components, forms (ApplyLeaveForm, CreateHolidayForm)
+│   ├── projects/             # api, components, forms (CreateProjectForm, EditProjectForm)
+│   ├── roles/                # api, components, forms (CreateRoleForm, EditRoleForm, CreatePermissionForm, EditPermissionForm)
+│   ├── timesheets/           # api, components, forms (LogTimesheetForm), utils
+│   └── users/                # api, components, forms (PersonalDetailsForm, BankingDetailsForm, CreateUserForm, EditUserForm)
 │
 ├── lib/                      # api-client, date-utils, error-utils
 ├── store/                    # Zustand stores (use-auth-store)

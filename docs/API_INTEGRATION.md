@@ -19,6 +19,8 @@ The frontend communicates with the backend API (`http://localhost:8000/api/v1`) 
   - `register(payload: RegisterPayload)` $\rightarrow$ `POST /auth/register`
   - `getMe(token: string)` $\rightarrow$ `GET /auth/me`
   - `logout(refreshToken: string)` $\rightarrow$ `POST /auth/logout`
+  - `forgotPassword(payload: ForgotPasswordPayload)` $\rightarrow$ `POST /auth/forgot-password`
+  - `resetPassword(payload: ResetPasswordPayload)` $\rightarrow$ `POST /auth/reset-password`
 
 - **Users API (`src/features/users/api/users-api.ts`)**:
   - `getCurrentUser()` $\rightarrow$ `GET /users/me`
