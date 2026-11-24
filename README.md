@@ -9,6 +9,7 @@ The frontend client for **OmniHR** built with Next.js 16 (Turbopack), React 19, 
 - **Aesthetic Glassmorphism Design**: Custom dark-mode UI tokens with sleek gradient accents and micro-animations.
 - **Modular Form Architecture**: Dedicated `forms/` folders within every feature module, cleanly separating form validation, state, and submissions from modal wrappers and pages.
 - **Enterprise Auth & Account Recovery**: Comprehensive authentication flow including login, anti-enumeration forgot-password request, and single-use password reset with token verification.
+- **Third-Party Integrations & AI Engine**: Dedicated generic configuration dashboard (`/integrations`) for managing Slack and Groq AI credentials, testing live connectivity, viewing webhook endpoints, and dynamically adding custom credential fields.
 - **Unified Monthly Workspace Calendar**: Rich interactive calendar featuring multi-layer badge overlays (Holidays, Leaves, Timesheets) and date inspector modals.
 - **Custom UI Components**:
   - `<DatePicker />`: Glassmorphic date popover with month/year navigation and quick presets.

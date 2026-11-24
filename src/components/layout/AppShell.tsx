@@ -17,6 +17,7 @@ import {
   X,
   ChevronRight,
   Cpu,
+  Bot,
 } from "lucide-react";
 import { useAuthStore } from "@/store/use-auth-store";
 import { ROUTES, PERMISSIONS, PermissionCode, ROLES } from "@/constants";
@@ -96,6 +97,12 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
       href: ROUTES.AUDIT_LOGS,
       icon: ScrollText,
       permission: PERMISSIONS.AUDIT_READ,
+    },
+    {
+      label: "Integrations & AI",
+      href: ROUTES.INTEGRATIONS,
+      icon: Bot,
+      roles: [ROLES.SUPER_ADMIN],
     },
     {
       label: "My Profile",
