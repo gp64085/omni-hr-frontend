@@ -9,6 +9,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -44,6 +45,24 @@ export function DynamicCredentialsForm({
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [fetchedModels, setFetchedModels] = useState<string[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState<boolean>(false);
+
+  const handleFetchModels = async () => {
+    setIsFetchingModels(true);
+    try {
+      const apiKey = formFields["api_key"];
+      const models = await integrationsApi.listGroqModels(apiKey);
+      if (models && models.length > 0) {
+        setFetchedModels(models);
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setIsFetchingModels(false);
+    }
+  };
 
   // Sync current form state to parent getter ref for connection testing
   useEffect(() => {
@@ -259,16 +278,64 @@ export function DynamicCredentialsForm({
             }
 
             return (
-              <Input
-                key={field.key}
-                label={field.label}
-                type={field.type}
-                icon={field.type === "password" ? Shield : KeyRound}
-                placeholder={field.placeholder || ""}
-                value={formFields[field.key] || ""}
-                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                required={field.required}
-              />
+              <div key={field.key} className="space-y-2">
+                <Input
+                  label={field.label}
+                  type={field.type}
+                  icon={field.type === "password" ? Shield : KeyRound}
+                  placeholder={field.placeholder || ""}
+                  value={formFields[field.key] || ""}
+                  onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                  required={field.required}
+                />
+                {field.key === "model" && (
+                  <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                        Quick-Select Model Preset:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleFetchModels}
+                        disabled={isFetchingModels}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        <RefreshCw
+                          className={`w-3.5 h-3.5 ${
+                            isFetchingModels ? "animate-spin" : ""
+                          }`}
+                        />
+                        Fetch Models from Your Groq Account
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(fetchedModels.length > 0
+                        ? fetchedModels
+                        : [
+                            "openai/gpt-oss-120b",
+                            "qwen/qwen3.8-27b",
+                            "openai/gpt-oss-20b",
+                            "llama-3.3-70b-versatile",
+                            "llama-3.1-8b-instant",
+                          ]
+                      ).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => handleFieldChange("model", m)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors ${
+                            formFields["model"] === m
+                              ? "bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30"
+                              : "bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800"
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

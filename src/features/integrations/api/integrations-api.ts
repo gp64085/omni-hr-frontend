@@ -41,4 +41,12 @@ export const integrationsApi = {
     );
     return res.data.data;
   },
+
+  listGroqModels: async (apiKey?: string): Promise<string[]> => {
+    const res = await apiClient.get<{ success: boolean; data: string[] }>(
+      "/integrations/groq/models",
+      apiKey ? { params: { api_key: apiKey } } : {}
+    );
+    return res.data.data;
+  },
 };

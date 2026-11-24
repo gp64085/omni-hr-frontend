@@ -89,14 +89,10 @@ export const SUPPORTED_PLATFORMS: PlatformMetadata[] = [
       },
       {
         key: "model",
-        label: "AI Model Selection",
-        type: "select",
-        options: [
-          { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile (Recommended)" },
-          { value: "mixtral-8x7b-32768", label: "Mixtral 8x7B (32k Context)" },
-          { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (Ultra Fast)" },
-        ],
-        description: "Llama 3.3 70B supports native tool calling with strict schema adherence.",
+        label: "AI Model Name / ID",
+        type: "text",
+        placeholder: "e.g. openai/gpt-oss-120b, qwen/qwen3.8-27b, llama-3.3-70b-versatile",
+        description: "Specify any Groq model accessible to your account (e.g. openai/gpt-oss-120b, qwen/qwen3.8-27b, or any custom model).",
         required: true,
       },
     ],
