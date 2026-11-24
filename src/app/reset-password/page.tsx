@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ArrowLeft, CheckCircle2, ShieldCheck, AlertCircle } from "lucide-react";
+import { Lock, ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 import { PageLayout } from "@/components/ui/PageLayout";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
